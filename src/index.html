@@ -8,13 +8,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">PMM</div>
-        <div>
-          <strong>私人教練管理系統</strong>
-          <span>Private Coaching Management</span>
-        </div>
-      </div>
+      <div class="brand"><div class="brand-mark">PMM</div><div><strong>私人教練管理系統</strong><span>Private Coaching Management</span></div></div>
       <nav>
         <button class="nav-item active" data-view="dashboard">總覽</button>
         <button class="nav-item" data-view="members">會員管理</button>
@@ -24,13 +18,7 @@
     </aside>
 
     <main class="main-content">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">PMM Operations</p>
-          <h1 id="pageTitle">營運總覽</h1>
-        </div>
-        <div class="status-pill">Asia/Taipei</div>
-      </header>
+      <header class="topbar"><div><p class="eyebrow">PMM Operations</p><h1 id="pageTitle">營運總覽</h1></div><div class="status-pill">Asia/Taipei</div></header>
 
       <section id="dashboard" class="view active-view">
         <div class="metric-grid">
@@ -39,14 +27,7 @@
           <article class="metric-card"><span>今日課程</span><strong id="todayBookings">—</strong></article>
           <article class="metric-card"><span>本月營收</span><strong id="monthlyRevenue">—</strong></article>
         </div>
-        <article class="panel">
-          <div class="panel-head">
-            <div><p class="eyebrow">Workflow</p><h2>核心流程</h2></div>
-          </div>
-          <div class="flow-grid">
-            <div>建立會員</div><div>建立訂單</div><div>確認付款</div><div>時數加值</div><div>安排課程</div><div>扣除時數</div>
-          </div>
-        </article>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">Workflow</p><h2>核心流程</h2></div></div><div class="flow-grid"><div>建立會員</div><div>建立訂單</div><div>確認付款</div><div>時數加值</div><div>安排課程</div><div>扣除時數</div></div></article>
       </section>
 
       <section id="members" class="view">
@@ -62,6 +43,10 @@
             <div class="form-actions span-2"><button class="primary-btn" type="submit">建立會員</button></div>
           </form>
         </article>
+        <article class="panel list-panel">
+          <div class="panel-head stack-mobile"><div><p class="eyebrow">Members</p><h2>會員列表</h2></div><div class="toolbar"><input id="memberSearch" placeholder="搜尋編號、姓名或電話"><button class="secondary-btn" id="memberSearchBtn" type="button">搜尋</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>編號</th><th>姓名</th><th>電話</th><th>等級</th><th>已上</th><th>剩餘</th><th>最近交易</th></tr></thead><tbody id="memberRows"></tbody></table></div>
+        </article>
       </section>
 
       <section id="orders" class="view">
@@ -74,6 +59,10 @@
             <label>帳單地址<input name="billingAddress"></label>
             <div class="form-actions span-2"><button class="primary-btn" type="submit">建立訂單</button></div>
           </form>
+        </article>
+        <article class="panel list-panel">
+          <div class="panel-head"><div><p class="eyebrow">Transactions</p><h2>訂單統計</h2></div><select id="orderStatusFilter" class="compact-select"><option value="ALL">全部</option><option value="Pending">Pending</option><option value="Paid">Paid</option></select></div>
+          <div class="table-wrap"><table><thead><tr><th>日期</th><th>訂單號碼</th><th>會員</th><th>產品</th><th>金額</th><th>付款方式</th><th>狀態</th><th>操作</th></tr></thead><tbody id="orderRows"></tbody></table></div>
         </article>
       </section>
 
@@ -89,10 +78,13 @@
             <div class="form-actions span-2"><button class="primary-btn" type="submit">確認並完成預約</button></div>
           </form>
         </article>
+        <article class="panel list-panel">
+          <div class="panel-head"><div><p class="eyebrow">Schedule</p><h2>預約紀錄</h2></div><button class="secondary-btn" id="refreshBookings" type="button">重新整理</button></div>
+          <div class="table-wrap"><table><thead><tr><th>課程日期</th><th>時間</th><th>學員</th><th>會員編號</th><th>教練</th><th>時數</th><th>狀態</th></tr></thead><tbody id="bookingRows"></tbody></table></div>
+        </article>
       </section>
     </main>
   </div>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <?!= include('js'); ?>
 </body>
