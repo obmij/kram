@@ -1,4 +1,5 @@
 function searchMembers(keyword) {
+  requireAuthorizedUser_();
   const term = String(keyword || '').trim().toLowerCase();
   return getRecords_(CONFIG.SHEETS.MEMBERS)
     .filter(function (member) {
@@ -24,6 +25,7 @@ function searchMembers(keyword) {
 }
 
 function listOrders(status) {
+  requireAuthorizedUser_();
   const filter = String(status || 'ALL');
   return getRecords_(CONFIG.SHEETS.ORDERS)
     .filter(function (order) {
@@ -48,6 +50,7 @@ function listOrders(status) {
 }
 
 function listBookings() {
+  requireAuthorizedUser_();
   return getRecords_(CONFIG.SHEETS.BOOKINGS)
     .slice(-100)
     .reverse()
