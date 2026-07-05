@@ -1,0 +1,61 @@
+<script>
+(function () {
+  const rows = document.getElementById('bookingRows');
+  if (!rows) return;
+
+  const observer = new MutationObserver(function () {
+    rows.querySelectorAll('tr').forEach(function (row) {
+      if (row.querySelector('.empty-row')) {
+        const empty = row.querySelector('.empty-row');
+        if (empty) empty.colSpan = 8;
+        return;
+      }
+      if (row.children.length >= 8) return;
+      const status = row.children[6] ? row.children[6].textContent.trim() : '';
+      const bookingId = extractBookingId_(row);
+      const cell = document.createElement('td');
+      if (status === 'Confirmed' && bookingId) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'table-btn';
+        button.textContent = '完成課程';
+        button.addEventListener('click', function () {
+          complete_(bookingId, button);
+        });
+        cell.appendChild(button);
+      } else {
+        cell.textContent = '—';
+      }
+      row.appendChild(cell);
+    });
+  });
+
+  observer.observe(rows, { childList: true, subtree: true });
+
+  function extractBookingId_(row) {
+    const source = row.dataset.bookingId;
+    if (source) return source;
+    const student = row.children[2] ? row.children[2].textContent.trim() : '';
+    const memberId = row.children[3] ? row.children[3].textContent.trim() : '';
+    const date = row.children[0] ? row.children[0].textContent.trim() : '';
+    const time = row.children[1] ? row.children[1].textContent.trim() : '';
+    const records = window.__pmmBookingMap || {};
+    return records[[date, time, student, memberId].join('|')] || '';
+  }
+
+  function complete_(bookingId, button) {
+    if (!window.confirm('確定此課程已完成？完成後會增加會員的已上時數。')) return;
+    button.disabled = true;
+    google.script.run
+      .withSuccessHandler(function (result) {
+        alert('課程已完成，會員累計已上時數：' + result.completedHours);
+        document.getElementById('refreshBookings').click();
+      })
+      .withFailureHandler(function (error) {
+        button.disabled = false;
+        alert(error && error.message ? error.message : '操作失敗');
+      })
+      .completeBooking(bookingId);
+  }
+})();
+</script>
