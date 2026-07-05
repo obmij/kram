@@ -1,4 +1,5 @@
 function getDashboardSummary() {
+  requireAuthorizedUser_();
   const members = getRecords_(CONFIG.SHEETS.MEMBERS);
   const orders = getRecords_(CONFIG.SHEETS.ORDERS);
   const bookings = getRecords_(CONFIG.SHEETS.BOOKINGS);
@@ -10,7 +11,7 @@ function getDashboardSummary() {
   }).length;
 
   const todayBookings = bookings.filter(function (booking) {
-    return String(booking.courseDate) === today &&
+    return displayDate_(booking.courseDate) === today &&
       String(booking.bookingStatus) === 'Confirmed';
   }).length;
 
