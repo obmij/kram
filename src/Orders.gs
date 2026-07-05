@@ -1,4 +1,5 @@
 function createOrder(data) {
+  const operator = requireAuthorizedUser_();
   validateRequired_(data, ['memberId', 'productId', 'paymentMethod']);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -26,7 +27,7 @@ function createOrder(data) {
       '',
       now
     ]);
-    return { success: true, orderNumber: orderNumber, amount: product.price };
+    return { success: true, orderNumber: orderNumber, amount: product.price, createdBy: operator };
   } finally {
     lock.releaseLock();
   }
