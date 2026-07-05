@@ -1,7 +1,7 @@
 const SCHEMAS = Object.freeze({
   CRM_Members: ['createdAt','memberId','chineseName','englishName','birthday','phone','address','memberLevel','latestTransaction','completedHours','remainingHours','status','updatedAt'],
   Orders: ['createdAt','orderNumber','memberId','name','phone','billingAddress','productId','productName','purchaseHours','amount','paymentMethod','transactionStatus','isHoursApplied','appliedAt','updatedAt'],
-  Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt'],
+  Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt','completedAt','completedBy'],
   Products: ['productId','productName','hours','price','active'],
   Coaches: ['coachId','coachName','active'],
   Hour_Ledger: ['createdAt','ledgerId','memberId','referenceType','referenceId','deltaHours','balanceBefore','balanceAfter','note','createdBy']
@@ -9,17 +9,26 @@ const SCHEMAS = Object.freeze({
 
 function setupSystem() {
   const ss = getSpreadsheet_();
-  Object.keys(SCHEMAS).forEach(name => {
+  Object.keys(SCHEMAS).forEach(function(name) {
     let sheet = ss.getSheetByName(name);
     if (!sheet) sheet = ss.insertSheet(name);
-    const headers = SCHEMAS[name];
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    ensureHeaders_(sheet, SCHEMAS[name]);
     sheet.setFrozenRows(1);
-    sheet.autoResizeColumns(1, headers.length);
+    sheet.autoResizeColumns(1, SCHEMAS[name].length);
   });
   seedProducts_();
   seedCoaches_();
   return { success: true, sheets: Object.keys(SCHEMAS) };
+}
+
+function ensureHeaders_(sheet, requiredHeaders) {
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const current = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(String);
+  const merged = current.slice();
+  requiredHeaders.forEach(function(header) {
+    if (merged.indexOf(header) < 0) merged.push(header);
+  });
+  sheet.getRange(1, 1, 1, merged.length).setValues([merged]);
 }
 
 function seedProducts_() {
@@ -37,5 +46,5 @@ function seedCoaches_() {
   if (sheet.getLastRow() > 1) return;
   const names = ['Apple','Berry','Cindy','Doofy','Fancy'];
   sheet.getRange(2, 1, names.length, 3)
-    .setValues(names.map((name, i) => [`C${String(i + 1).padStart(3, '0')}`, name, true]));
+    .setValues(names.map(function(name, i) { return ['C' + String(i + 1).padStart(3, '0'), name, true]; }));
 }
