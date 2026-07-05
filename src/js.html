@@ -1,11 +1,6 @@
 <script>
 (function () {
-  const titles = {
-    dashboard: '營運總覽',
-    members: '會員管理',
-    orders: '訂單管理',
-    bookings: '課程預約'
-  };
+  const titles = { dashboard:'營運總覽', members:'會員管理', orders:'訂單管理', bookings:'課程預約' };
 
   document.querySelectorAll('.nav-item').forEach(function (button) {
     button.addEventListener('click', function () {
@@ -15,18 +10,22 @@
       button.classList.add('active');
       document.getElementById(view).classList.add('active-view');
       document.getElementById('pageTitle').textContent = titles[view];
+      if (view === 'members') loadMembers();
+      if (view === 'orders') loadOrders();
+      if (view === 'bookings') loadBookings();
     });
   });
 
   bindForm('memberForm', 'addMember', function (result) {
+    loadMembers();
     return '會員建立完成：' + result.memberId;
   });
-
   bindForm('orderForm', 'createOrder', function (result) {
+    loadOrders();
     return '訂單建立完成：' + result.orderNumber + '，金額 NTD ' + Number(result.amount).toLocaleString('zh-TW');
   });
-
   bindForm('bookingForm', 'createBooking', function (result) {
+    loadBookings();
     return '預約完成：' + result.bookingId + '，剩餘 ' + result.remainingHours + ' 小時';
   });
 
@@ -38,6 +37,18 @@
     document.getElementById('endTime').value = option ? option.dataset.end || '' : '';
   });
 
+  document.getElementById('memberSearchBtn').addEventListener('click', loadMembers);
+  document.getElementById('memberSearch').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') loadMembers();
+  });
+  document.getElementById('orderStatusFilter').addEventListener('change', loadOrders);
+  document.getElementById('refreshBookings').addEventListener('click', loadBookings);
+  document.getElementById('orderRows').addEventListener('click', function (event) {
+    const button = event.target.closest('[data-pay-order]');
+    if (!button) return;
+    confirmPayment(button.dataset.payOrder, button);
+  });
+
   loadDashboard();
 
   function bindForm(formId, serverFunction, messageBuilder) {
@@ -47,7 +58,6 @@
       const button = form.querySelector('button[type="submit"]');
       const data = Object.fromEntries(new FormData(form).entries());
       button.disabled = true;
-
       google.script.run
         .withSuccessHandler(function (result) {
           button.disabled = false;
@@ -58,16 +68,95 @@
         })
         .withFailureHandler(function (error) {
           button.disabled = false;
-          showToast(error && error.message ? error.message : '操作失敗', true);
+          showToast(errorMessage(error), true);
         })[serverFunction](data);
     });
+  }
+
+  function loadMembers() {
+    const keyword = document.getElementById('memberSearch').value;
+    setLoadingRow('memberRows', 7);
+    google.script.run
+      .withSuccessHandler(function (members) {
+        const rows = members.map(function (member) {
+          const name = [member.chineseName, member.englishName].filter(Boolean).join(' / ');
+          return '<tr>' +
+            cell(member.memberId) + cell(name) + cell(member.phone) + cell(member.memberLevel) +
+            cell(member.completedHours) + cell(member.remainingHours) + cell(member.latestTransaction || '—') +
+          '</tr>';
+        }).join('');
+        document.getElementById('memberRows').innerHTML = rows || emptyRow(7, '找不到會員資料');
+      })
+      .withFailureHandler(function (error) {
+        document.getElementById('memberRows').innerHTML = emptyRow(7, errorMessage(error));
+      })
+      .searchMembers(keyword);
+  }
+
+  function loadOrders() {
+    const status = document.getElementById('orderStatusFilter').value;
+    setLoadingRow('orderRows', 8);
+    google.script.run
+      .withSuccessHandler(function (orders) {
+        const rows = orders.map(function (order) {
+          const statusClass = String(order.transactionStatus).toLowerCase();
+          const action = order.transactionStatus === 'Pending'
+            ? '<button class="table-btn" data-pay-order="' + escapeHtml(order.orderNumber) + '">確認入帳</button>'
+            : '—';
+          return '<tr>' + cell(order.createdAt) + cell(order.orderNumber) +
+            cell((order.name || '') + '<br><small>' + escapeHtml(order.memberId) + '</small>', true) +
+            cell(order.productName) + cell('NTD ' + Number(order.amount).toLocaleString('zh-TW')) +
+            cell(order.paymentMethod) +
+            cell('<span class="badge badge-' + escapeHtml(statusClass) + '">' + escapeHtml(order.transactionStatus) + '</span>', true) +
+            cell(action, true) + '</tr>';
+        }).join('');
+        document.getElementById('orderRows').innerHTML = rows || emptyRow(8, '沒有符合條件的訂單');
+      })
+      .withFailureHandler(function (error) {
+        document.getElementById('orderRows').innerHTML = emptyRow(8, errorMessage(error));
+      })
+      .listOrders(status);
+  }
+
+  function confirmPayment(orderNumber, button) {
+    if (!window.confirm('確定訂單 ' + orderNumber + ' 已入帳？完成後會將購買時數加到會員帳戶。')) return;
+    button.disabled = true;
+    google.script.run
+      .withSuccessHandler(function (result) {
+        showToast('付款確認完成，會員剩餘時數：' + result.balanceAfter, false);
+        loadOrders();
+        loadDashboard();
+      })
+      .withFailureHandler(function (error) {
+        button.disabled = false;
+        showToast(errorMessage(error), true);
+      })
+      .markOrderPaid(orderNumber);
+  }
+
+  function loadBookings() {
+    setLoadingRow('bookingRows', 7);
+    google.script.run
+      .withSuccessHandler(function (bookings) {
+        const rows = bookings.map(function (booking) {
+          const statusClass = String(booking.bookingStatus).toLowerCase();
+          return '<tr>' + cell(booking.courseDate) + cell(booking.startTime + '–' + booking.endTime) +
+            cell(booking.studentName) + cell(booking.memberId) + cell(booking.coachName) +
+            cell(booking.totalHours) +
+            cell('<span class="badge badge-' + escapeHtml(statusClass) + '">' + escapeHtml(booking.bookingStatus) + '</span>', true) + '</tr>';
+        }).join('');
+        document.getElementById('bookingRows').innerHTML = rows || emptyRow(7, '尚無預約紀錄');
+      })
+      .withFailureHandler(function (error) {
+        document.getElementById('bookingRows').innerHTML = emptyRow(7, errorMessage(error));
+      })
+      .listBookings();
   }
 
   function loadSlots() {
     const date = bookingForm.courseDate.value;
     const coach = bookingForm.coachName.value;
     if (!date || !coach) return resetSlots();
-
     google.script.run
       .withSuccessHandler(function (slots) {
         const select = document.getElementById('startTime');
@@ -81,9 +170,7 @@
         });
         document.getElementById('endTime').value = '';
       })
-      .withFailureHandler(function (error) {
-        showToast(error && error.message ? error.message : '無法讀取可用時段', true);
-      })
+      .withFailureHandler(function (error) { showToast(errorMessage(error), true); })
       .listAvailableSlots(coach, date);
   }
 
@@ -101,13 +188,28 @@
         document.getElementById('monthlyRevenue').textContent = 'NTD ' + Number(data.monthlyRevenue).toLocaleString('zh-TW');
       })
       .withFailureHandler(function () {
-        ['memberCount','pendingOrders','todayBookings','monthlyRevenue'].forEach(function (id) {
-          document.getElementById(id).textContent = '—';
-        });
+        ['memberCount','pendingOrders','todayBookings','monthlyRevenue'].forEach(function (id) { document.getElementById(id).textContent = '—'; });
       })
       .getDashboardSummary();
   }
 
+  function cell(value, trusted) {
+    return '<td>' + (trusted ? String(value || '') : escapeHtml(value)) + '</td>';
+  }
+  function emptyRow(columns, message) {
+    return '<tr><td class="empty-row" colspan="' + columns + '">' + escapeHtml(message) + '</td></tr>';
+  }
+  function setLoadingRow(target, columns) {
+    document.getElementById(target).innerHTML = emptyRow(columns, '資料載入中…');
+  }
+  function escapeHtml(value) {
+    return String(value === undefined || value === null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+  function errorMessage(error) {
+    return error && error.message ? error.message : '操作失敗';
+  }
   function showToast(message, isError) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
