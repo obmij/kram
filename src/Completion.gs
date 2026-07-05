@@ -1,4 +1,5 @@
 function completeBooking(bookingId) {
+  const operator = requireAuthorizedUser_();
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -20,7 +21,6 @@ function completeBooking(bookingId) {
     if (!member) throw new Error('找不到會員');
 
     const now = new Date();
-    const operator = Session.getActiveUser().getEmail() || 'system';
     const bookingSheet = getSheet_(CONFIG.SHEETS.BOOKINGS);
     const bookingHeaders = bookingSheet.getRange(1, 1, 1, bookingSheet.getLastColumn()).getValues()[0];
     setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'bookingStatus', 'Completed');
