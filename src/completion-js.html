@@ -2,81 +2,123 @@
 (function () {
   const rows = document.getElementById('bookingRows');
   const refresh = document.getElementById('refreshBookings');
-  if (!rows || !refresh) return;
+  if (rows && refresh) initCompletion_();
+  initHealth_();
 
-  let rendering = false;
-  let scheduled = false;
+  function initCompletion_() {
+    let rendering = false;
+    let scheduled = false;
 
-  document.querySelectorAll('[data-view="bookings"]').forEach(function (button) {
-    button.addEventListener('click', scheduleRender_);
-  });
-  refresh.addEventListener('click', scheduleRender_);
-  rows.addEventListener('click', function (event) {
-    const button = event.target.closest('[data-complete-booking]');
-    if (!button) return;
-    complete_(button.dataset.completeBooking, button);
-  });
+    document.querySelectorAll('[data-view="bookings"]').forEach(function (button) {
+      button.addEventListener('click', scheduleRender_);
+    });
+    refresh.addEventListener('click', scheduleRender_);
+    rows.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-complete-booking]');
+      if (button) complete_(button.dataset.completeBooking, button);
+    });
 
-  const observer = new MutationObserver(function () {
-    if (rendering) return;
-    const firstDataRow = rows.querySelector('tr:not(:has(.empty-row))');
-    if (firstDataRow && firstDataRow.children.length < 8) scheduleRender_();
-  });
-  observer.observe(rows, { childList: true, subtree: true });
+    const observer = new MutationObserver(function () {
+      if (rendering) return;
+      const firstDataRow = rows.querySelector('tr:not(:has(.empty-row))');
+      if (firstDataRow && firstDataRow.children.length < 8) scheduleRender_();
+    });
+    observer.observe(rows, { childList: true, subtree: true });
 
-  function scheduleRender_() {
-    if (scheduled) return;
-    scheduled = true;
-    window.setTimeout(function () {
-      scheduled = false;
-      render_();
-    }, 80);
-  }
-
-  function render_() {
-    rendering = true;
-    google.script.run
-      .withSuccessHandler(function (bookings) {
-        const html = bookings.map(function (booking) {
-          const status = String(booking.bookingStatus || '');
-          const statusClass = status.toLowerCase();
-          const action = status === 'Confirmed'
-            ? '<button type="button" class="table-btn" data-complete-booking="' + escape_(booking.bookingId) + '">完成課程</button>'
-            : (booking.completedAt ? escape_(booking.completedAt) : '—');
-          return '<tr>' +
-            cell_(booking.courseDate) +
-            cell_(booking.startTime + '–' + booking.endTime) +
-            cell_(booking.studentName) +
-            cell_(booking.memberId) +
-            cell_(booking.coachName) +
-            cell_(booking.totalHours) +
-            '<td><span class="badge badge-' + escape_(statusClass) + '">' + escape_(status) + '</span></td>' +
-            '<td>' + action + '</td>' +
-          '</tr>';
-        }).join('');
-        rows.innerHTML = html || '<tr><td class="empty-row" colspan="8">尚無預約紀錄</td></tr>';
-        rendering = false;
-      })
-      .withFailureHandler(function (error) {
-        rows.innerHTML = '<tr><td class="empty-row" colspan="8">' + escape_(error && error.message ? error.message : '無法載入預約紀錄') + '</td></tr>';
-        rendering = false;
-      })
-      .listBookings();
-  }
-
-  function complete_(bookingId, button) {
-    if (!window.confirm('確定此課程已完成？完成後會增加會員的已上時數。')) return;
-    button.disabled = true;
-    google.script.run
-      .withSuccessHandler(function (result) {
-        window.alert('課程已完成，會員累計已上時數：' + result.completedHours);
+    function scheduleRender_() {
+      if (scheduled) return;
+      scheduled = true;
+      window.setTimeout(function () {
+        scheduled = false;
         render_();
-      })
-      .withFailureHandler(function (error) {
-        button.disabled = false;
-        window.alert(error && error.message ? error.message : '操作失敗');
-      })
-      .completeBooking(bookingId);
+      }, 80);
+    }
+
+    function render_() {
+      rendering = true;
+      google.script.run
+        .withSuccessHandler(function (bookings) {
+          const html = bookings.map(function (booking) {
+            const status = String(booking.bookingStatus || '');
+            const statusClass = status.toLowerCase();
+            const action = status === 'Confirmed'
+              ? '<button type="button" class="table-btn" data-complete-booking="' + escape_(booking.bookingId) + '">完成課程</button>'
+              : (booking.completedAt ? escape_(booking.completedAt) : '—');
+            return '<tr>' +
+              cell_(booking.courseDate) +
+              cell_(booking.startTime + '–' + booking.endTime) +
+              cell_(booking.studentName) +
+              cell_(booking.memberId) +
+              cell_(booking.coachName) +
+              cell_(booking.totalHours) +
+              '<td><span class="badge badge-' + escape_(statusClass) + '">' + escape_(status) + '</span></td>' +
+              '<td>' + action + '</td>' +
+            '</tr>';
+          }).join('');
+          rows.innerHTML = html || '<tr><td class="empty-row" colspan="8">尚無預約紀錄</td></tr>';
+          rendering = false;
+        })
+        .withFailureHandler(function (error) {
+          rows.innerHTML = '<tr><td class="empty-row" colspan="8">' + escape_(error && error.message ? error.message : '無法載入預約紀錄') + '</td></tr>';
+          rendering = false;
+        })
+        .listBookings();
+    }
+
+    function complete_(bookingId, button) {
+      if (!window.confirm('確定此課程已完成？完成後會增加會員的已上時數。')) return;
+      button.disabled = true;
+      google.script.run
+        .withSuccessHandler(function (result) {
+          window.alert('課程已完成，會員累計已上時數：' + result.completedHours);
+          render_();
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          window.alert(error && error.message ? error.message : '操作失敗');
+        })
+        .completeBooking(bookingId);
+    }
+  }
+
+  function initHealth_() {
+    const dashboard = document.getElementById('dashboard');
+    if (!dashboard || document.getElementById('runHealthCheck')) return;
+
+    const style = document.createElement('style');
+    style.textContent = '.health-summary{padding:14px 16px;border-radius:14px;background:#f8fafc;color:#475467;font-weight:800;margin-bottom:16px}.health-ok{background:#dcfce7;color:#166534}.health-fail{background:#fee2e2;color:#991b1b}.health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.health-item{display:grid;gap:5px;padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}.health-item span{font-size:13px;color:#667085;word-break:break-word}.health-item-ok{border-left:4px solid #22c55e}.health-item-fail{border-left:4px solid #ef4444}@media(max-width:640px){.health-grid{grid-template-columns:1fr}}';
+    document.head.appendChild(style);
+
+    const panel = document.createElement('article');
+    panel.className = 'panel';
+    panel.innerHTML = '<div class="panel-head"><div><p class="eyebrow">System Health</p><h2>系統健康檢查</h2></div><button type="button" class="secondary-btn" id="runHealthCheck">執行檢查</button></div><div id="healthSummary" class="health-summary">尚未執行檢查</div><div id="healthChecks" class="health-grid"></div>';
+    dashboard.appendChild(panel);
+
+    document.getElementById('runHealthCheck').addEventListener('click', function () {
+      const button = this;
+      const summary = document.getElementById('healthSummary');
+      const checks = document.getElementById('healthChecks');
+      button.disabled = true;
+      summary.className = 'health-summary';
+      summary.textContent = '檢查中…';
+      checks.innerHTML = '';
+
+      google.script.run
+        .withSuccessHandler(function (result) {
+          button.disabled = false;
+          summary.className = 'health-summary ' + (result.success ? 'health-ok' : 'health-fail');
+          summary.textContent = result.success ? '系統檢查通過｜' + result.checkedAt : '發現 ' + result.failedCount + ' 項異常｜' + result.checkedAt;
+          checks.innerHTML = result.checks.map(function (check) {
+            return '<div class="health-item ' + (check.passed ? 'health-item-ok' : 'health-item-fail') + '"><strong>' + escape_(check.name) + '</strong><span>' + escape_(check.detail) + '</span></div>';
+          }).join('');
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          summary.className = 'health-summary health-fail';
+          summary.textContent = error && error.message ? error.message : '系統檢查失敗';
+        })
+        .runSystemSelfCheck();
+    });
   }
 
   function cell_(value) {
