@@ -1,0 +1,59 @@
+<script>
+(function () {
+  const dashboard = document.getElementById('dashboard');
+  if (!dashboard) return;
+
+  const panel = document.createElement('article');
+  panel.className = 'panel';
+  panel.innerHTML = [
+    '<div class="panel-head">',
+      '<div><p class="eyebrow">System Health</p><h2>系統健康檢查</h2></div>',
+      '<button type="button" class="secondary-btn" id="runHealthCheck">執行檢查</button>',
+    '</div>',
+    '<div id="healthSummary" class="health-summary">尚未執行檢查</div>',
+    '<div id="healthChecks" class="health-grid"></div>'
+  ].join('');
+  dashboard.appendChild(panel);
+
+  document.getElementById('runHealthCheck').addEventListener('click', run_);
+
+  function run_() {
+    const button = document.getElementById('runHealthCheck');
+    const summary = document.getElementById('healthSummary');
+    const checks = document.getElementById('healthChecks');
+    button.disabled = true;
+    summary.textContent = '檢查中…';
+    checks.innerHTML = '';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        button.disabled = false;
+        summary.className = 'health-summary ' + (result.success ? 'health-ok' : 'health-fail');
+        summary.textContent = result.success
+          ? '系統檢查通過｜' + result.checkedAt
+          : '發現 ' + result.failedCount + ' 項異常｜' + result.checkedAt;
+        checks.innerHTML = result.checks.map(function (check) {
+          return '<div class="health-item ' + (check.passed ? 'health-item-ok' : 'health-item-fail') + '">' +
+            '<strong>' + escape_(check.name) + '</strong>' +
+            '<span>' + escape_(check.detail) + '</span>' +
+          '</div>';
+        }).join('');
+      })
+      .withFailureHandler(function (error) {
+        button.disabled = false;
+        summary.className = 'health-summary health-fail';
+        summary.textContent = error && error.message ? error.message : '系統檢查失敗';
+      })
+      .runSystemSelfCheck();
+  }
+
+  function escape_(value) {
+    return String(value === undefined || value === null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+})();
+</script>
