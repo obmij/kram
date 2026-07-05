@@ -1,0 +1,74 @@
+<style>
+:root {
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --ink: #14213d;
+  --muted: #667085;
+  --line: #e5e7eb;
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --soft: #ecfdf5;
+  --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+button, input, select { font: inherit; }
+.app-shell { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
+.sidebar { background: #0f172a; color: white; padding: 28px 22px; }
+.brand { display: flex; gap: 14px; align-items: center; margin-bottom: 34px; }
+.brand-mark { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, #34d399, #14b8a6); display: grid; place-items: center; font-weight: 800; }
+.brand strong, .brand span { display: block; }
+.brand span { margin-top: 4px; font-size: 12px; color: #94a3b8; }
+nav { display: grid; gap: 8px; }
+.nav-item { border: 0; border-radius: 12px; padding: 13px 14px; text-align: left; color: #cbd5e1; background: transparent; cursor: pointer; }
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,.09); color: white; }
+.main-content { padding: 34px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 0; font-size: clamp(28px, 4vw, 42px); }
+h2 { margin-bottom: 0; }
+.eyebrow { margin-bottom: 7px; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.status-pill { border: 1px solid var(--line); border-radius: 999px; background: white; padding: 9px 14px; color: var(--muted); }
+.view { display: none; }
+.active-view { display: block; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+.metric-card, .panel { background: var(--panel); border: 1px solid rgba(226,232,240,.9); border-radius: 22px; box-shadow: var(--shadow); }
+.metric-card { padding: 22px; }
+.metric-card span { display: block; color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+.metric-card strong { font-size: 30px; }
+.panel { padding: 26px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.flow-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.flow-grid div { min-height: 92px; border-radius: 16px; background: var(--soft); display: grid; place-items: center; text-align: center; padding: 14px; font-weight: 700; color: var(--accent-dark); }
+.form-panel { max-width: 960px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+label { display: grid; gap: 8px; font-weight: 700; font-size: 14px; }
+input, select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; background: #fff; color: var(--ink); outline: none; }
+input:focus, select:focus { border-color: #2dd4bf; box-shadow: 0 0 0 4px rgba(45,212,191,.15); }
+.span-2 { grid-column: span 2; }
+.form-actions { display: flex; justify-content: flex-end; padding-top: 6px; }
+.primary-btn { border: 0; border-radius: 12px; background: var(--accent); color: white; padding: 13px 20px; font-weight: 800; cursor: pointer; }
+.primary-btn:hover { background: var(--accent-dark); }
+.primary-btn:disabled { opacity: .55; cursor: wait; }
+.toast { position: fixed; right: 24px; bottom: 24px; max-width: 360px; padding: 14px 18px; border-radius: 14px; background: #0f172a; color: white; box-shadow: var(--shadow); transform: translateY(30px); opacity: 0; pointer-events: none; transition: .2s ease; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { background: #991b1b; }
+@media (max-width: 980px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { padding: 18px; }
+  nav { grid-template-columns: repeat(4, 1fr); }
+  .nav-item { text-align: center; }
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .flow-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .main-content { padding: 20px; }
+  .brand { margin-bottom: 18px; }
+  nav { grid-template-columns: repeat(2, 1fr); }
+  .metric-grid, .form-grid { grid-template-columns: 1fr; }
+  .span-2 { grid-column: span 1; }
+  .flow-grid { grid-template-columns: repeat(2, 1fr); }
+  .topbar { align-items: flex-start; gap: 14px; }
+  .status-pill { display: none; }
+}
+</style>
