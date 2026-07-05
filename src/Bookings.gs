@@ -1,4 +1,5 @@
 function createBooking(form) {
+  requireAuthorizedUser_();
   validateRequired_(form, ['memberId', 'coachName', 'courseDate', 'startTime', 'endTime']);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -55,6 +56,7 @@ function isOperatingSlot_(start, end) {
 }
 
 function listAvailableSlots(coachName, courseDate) {
+  requireAuthorizedUser_();
   const starts = [8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21];
   return starts.filter(function(hour) {
     const startTime = String(hour).padStart(2, '0') + ':00';
