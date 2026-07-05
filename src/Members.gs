@@ -1,4 +1,5 @@
 function addMember(form) {
+  const operator = requireAuthorizedUser_();
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -16,12 +17,13 @@ function addMember(form) {
       form.phone || '', form.address || '', form.memberLevel || 'Gold',
       '', 0, 0, 'Active', now
     ]);
-    return { success: true, memberId: memberId };
+    return { success: true, memberId: memberId, createdBy: operator };
   } finally {
     lock.releaseLock();
   }
 }
 
 function getMember(memberId) {
+  requireAuthorizedUser_();
   return findRecord_(CONFIG.SHEETS.MEMBERS, 'memberId', memberId);
 }
