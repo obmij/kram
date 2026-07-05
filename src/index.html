@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <?!= include('css'); ?>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">PMM</div>
+        <div>
+          <strong>私人教練管理系統</strong>
+          <span>Private Coaching Management</span>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-view="dashboard">總覽</button>
+        <button class="nav-item" data-view="members">會員管理</button>
+        <button class="nav-item" data-view="orders">訂單管理</button>
+        <button class="nav-item" data-view="bookings">課程預約</button>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PMM Operations</p>
+          <h1 id="pageTitle">營運總覽</h1>
+        </div>
+        <div class="status-pill">Asia/Taipei</div>
+      </header>
+
+      <section id="dashboard" class="view active-view">
+        <div class="metric-grid">
+          <article class="metric-card"><span>會員總數</span><strong id="memberCount">—</strong></article>
+          <article class="metric-card"><span>待付款訂單</span><strong id="pendingOrders">—</strong></article>
+          <article class="metric-card"><span>今日課程</span><strong id="todayBookings">—</strong></article>
+          <article class="metric-card"><span>本月營收</span><strong id="monthlyRevenue">—</strong></article>
+        </div>
+        <article class="panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">Workflow</p><h2>核心流程</h2></div>
+          </div>
+          <div class="flow-grid">
+            <div>建立會員</div><div>建立訂單</div><div>確認付款</div><div>時數加值</div><div>安排課程</div><div>扣除時數</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="members" class="view">
+        <article class="panel form-panel">
+          <div class="panel-head"><div><p class="eyebrow">CRM</p><h2>新增會員</h2></div></div>
+          <form id="memberForm" class="form-grid">
+            <label>中文姓名<input name="chineseName" autocomplete="name"></label>
+            <label>英文姓名<input name="englishName" required autocomplete="name"></label>
+            <label>出生年月日<input name="birthday" type="date"></label>
+            <label>行動電話<input name="phone" required inputmode="tel"></label>
+            <label class="span-2">聯絡地址<input name="address"></label>
+            <label>會員等級<select name="memberLevel"><option>Gold</option><option>Platinum</option><option>Diamond</option></select></label>
+            <div class="form-actions span-2"><button class="primary-btn" type="submit">建立會員</button></div>
+          </form>
+        </article>
+      </section>
+
+      <section id="orders" class="view">
+        <article class="panel form-panel">
+          <div class="panel-head"><div><p class="eyebrow">Orders</p><h2>建立訂單</h2></div></div>
+          <form id="orderForm" class="form-grid">
+            <label>會員編號<input name="memberId" required></label>
+            <label>產品<select name="productId"><option value="A">A｜12 小時｜NTD 16,000</option><option value="B">B｜25 小時｜NTD 32,000</option><option value="C">C｜5 小時｜NTD 8,888</option></select></label>
+            <label>付款方式<select name="paymentMethod"><option>Line Pay</option><option>信用卡</option><option>Apple Pay</option><option>Google Pay</option></select></label>
+            <label>帳單地址<input name="billingAddress"></label>
+            <div class="form-actions span-2"><button class="primary-btn" type="submit">建立訂單</button></div>
+          </form>
+        </article>
+      </section>
+
+      <section id="bookings" class="view">
+        <article class="panel form-panel">
+          <div class="panel-head"><div><p class="eyebrow">Bookings</p><h2>課程預約</h2></div></div>
+          <form id="bookingForm" class="form-grid">
+            <label>會員編號<input name="memberId" required></label>
+            <label>選擇教練<select name="coachName"><option>Apple</option><option>Berry</option><option>Cindy</option><option>Doofy</option><option>Fancy</option></select></label>
+            <label>課程日期<input name="courseDate" type="date" required></label>
+            <label>開始時間<select name="startTime" id="startTime" required><option value="">請先選擇日期</option></select></label>
+            <label>結束時間<input name="endTime" id="endTime" readonly></label>
+            <div class="form-actions span-2"><button class="primary-btn" type="submit">確認並完成預約</button></div>
+          </form>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <?!= include('js'); ?>
+</body>
+</html>
