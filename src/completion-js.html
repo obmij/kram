@@ -1,46 +1,67 @@
 <script>
 (function () {
   const rows = document.getElementById('bookingRows');
-  if (!rows) return;
+  const refresh = document.getElementById('refreshBookings');
+  if (!rows || !refresh) return;
 
-  const observer = new MutationObserver(function () {
-    rows.querySelectorAll('tr').forEach(function (row) {
-      if (row.querySelector('.empty-row')) {
-        const empty = row.querySelector('.empty-row');
-        if (empty) empty.colSpan = 8;
-        return;
-      }
-      if (row.children.length >= 8) return;
-      const status = row.children[6] ? row.children[6].textContent.trim() : '';
-      const bookingId = extractBookingId_(row);
-      const cell = document.createElement('td');
-      if (status === 'Confirmed' && bookingId) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'table-btn';
-        button.textContent = '完成課程';
-        button.addEventListener('click', function () {
-          complete_(bookingId, button);
-        });
-        cell.appendChild(button);
-      } else {
-        cell.textContent = '—';
-      }
-      row.appendChild(cell);
-    });
+  let rendering = false;
+  let scheduled = false;
+
+  document.querySelectorAll('[data-view="bookings"]').forEach(function (button) {
+    button.addEventListener('click', scheduleRender_);
+  });
+  refresh.addEventListener('click', scheduleRender_);
+  rows.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-complete-booking]');
+    if (!button) return;
+    complete_(button.dataset.completeBooking, button);
   });
 
+  const observer = new MutationObserver(function () {
+    if (rendering) return;
+    const firstDataRow = rows.querySelector('tr:not(:has(.empty-row))');
+    if (firstDataRow && firstDataRow.children.length < 8) scheduleRender_();
+  });
   observer.observe(rows, { childList: true, subtree: true });
 
-  function extractBookingId_(row) {
-    const source = row.dataset.bookingId;
-    if (source) return source;
-    const student = row.children[2] ? row.children[2].textContent.trim() : '';
-    const memberId = row.children[3] ? row.children[3].textContent.trim() : '';
-    const date = row.children[0] ? row.children[0].textContent.trim() : '';
-    const time = row.children[1] ? row.children[1].textContent.trim() : '';
-    const records = window.__pmmBookingMap || {};
-    return records[[date, time, student, memberId].join('|')] || '';
+  function scheduleRender_() {
+    if (scheduled) return;
+    scheduled = true;
+    window.setTimeout(function () {
+      scheduled = false;
+      render_();
+    }, 80);
+  }
+
+  function render_() {
+    rendering = true;
+    google.script.run
+      .withSuccessHandler(function (bookings) {
+        const html = bookings.map(function (booking) {
+          const status = String(booking.bookingStatus || '');
+          const statusClass = status.toLowerCase();
+          const action = status === 'Confirmed'
+            ? '<button type="button" class="table-btn" data-complete-booking="' + escape_(booking.bookingId) + '">完成課程</button>'
+            : (booking.completedAt ? escape_(booking.completedAt) : '—');
+          return '<tr>' +
+            cell_(booking.courseDate) +
+            cell_(booking.startTime + '–' + booking.endTime) +
+            cell_(booking.studentName) +
+            cell_(booking.memberId) +
+            cell_(booking.coachName) +
+            cell_(booking.totalHours) +
+            '<td><span class="badge badge-' + escape_(statusClass) + '">' + escape_(status) + '</span></td>' +
+            '<td>' + action + '</td>' +
+          '</tr>';
+        }).join('');
+        rows.innerHTML = html || '<tr><td class="empty-row" colspan="8">尚無預約紀錄</td></tr>';
+        rendering = false;
+      })
+      .withFailureHandler(function (error) {
+        rows.innerHTML = '<tr><td class="empty-row" colspan="8">' + escape_(error && error.message ? error.message : '無法載入預約紀錄') + '</td></tr>';
+        rendering = false;
+      })
+      .listBookings();
   }
 
   function complete_(bookingId, button) {
@@ -48,14 +69,27 @@
     button.disabled = true;
     google.script.run
       .withSuccessHandler(function (result) {
-        alert('課程已完成，會員累計已上時數：' + result.completedHours);
-        document.getElementById('refreshBookings').click();
+        window.alert('課程已完成，會員累計已上時數：' + result.completedHours);
+        render_();
       })
       .withFailureHandler(function (error) {
         button.disabled = false;
-        alert(error && error.message ? error.message : '操作失敗');
+        window.alert(error && error.message ? error.message : '操作失敗');
       })
       .completeBooking(bookingId);
+  }
+
+  function cell_(value) {
+    return '<td>' + escape_(value) + '</td>';
+  }
+
+  function escape_(value) {
+    return String(value === undefined || value === null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 })();
 </script>
