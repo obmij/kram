@@ -1,0 +1,41 @@
+function completeBooking(bookingId) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const booking = findRecord_(CONFIG.SHEETS.BOOKINGS, 'bookingId', bookingId);
+    if (!booking) throw new Error('找不到預約');
+    if (String(booking.bookingStatus) === 'Completed') {
+      return { success: true, duplicate: true };
+    }
+    if (String(booking.bookingStatus) !== 'Confirmed') {
+      throw new Error('只有已確認的預約可以完成');
+    }
+
+    const member = findRecord_(CONFIG.SHEETS.MEMBERS, 'memberId', booking.memberId);
+    if (!member) throw new Error('找不到會員');
+
+    const now = new Date();
+    const bookingSheet = getSheet_(CONFIG.SHEETS.BOOKINGS);
+    const bookingHeaders = bookingSheet.getRange(1, 1, 1, bookingSheet.getLastColumn()).getValues()[0];
+    setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'bookingStatus', 'Completed');
+    setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'updatedAt', now);
+    setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'completedAt', now);
+    setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'completedBy', 'system');
+
+    const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
+    const memberHeaders = memberSheet.getRange(1, 1, 1, memberSheet.getLastColumn()).getValues()[0];
+    const completedHours = Number(member.completedHours || 0) + Number(booking.totalHours || 0);
+    setCellByHeader_(memberSheet, member._row, memberHeaders, 'completedHours', completedHours);
+    setCellByHeader_(memberSheet, member._row, memberHeaders, 'updatedAt', now);
+
+    return { success: true, duplicate: false, completedHours: completedHours };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function setCellByHeader_(sheet, row, headers, header, value) {
+  const column = headers.indexOf(header);
+  if (column < 0) throw new Error('缺少資料欄位：' + header + '，請先執行 setupSystem()');
+  sheet.getRange(row, column + 1).setValue(value);
+}
