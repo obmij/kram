@@ -3,6 +3,20 @@
   const dashboard = document.getElementById('dashboard');
   if (!dashboard) return;
 
+  const style = document.createElement('style');
+  style.textContent = [
+    '.health-summary{padding:14px 16px;border-radius:14px;background:#f8fafc;color:#475467;font-weight:800;margin-bottom:16px}',
+    '.health-ok{background:#dcfce7;color:#166534}',
+    '.health-fail{background:#fee2e2;color:#991b1b}',
+    '.health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
+    '.health-item{display:grid;gap:5px;padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}',
+    '.health-item span{font-size:13px;color:#667085;word-break:break-word}',
+    '.health-item-ok{border-left:4px solid #22c55e}',
+    '.health-item-fail{border-left:4px solid #ef4444}',
+    '@media(max-width:640px){.health-grid{grid-template-columns:1fr}}'
+  ].join('');
+  document.head.appendChild(style);
+
   const panel = document.createElement('article');
   panel.className = 'panel';
   panel.innerHTML = [
@@ -22,6 +36,7 @@
     const summary = document.getElementById('healthSummary');
     const checks = document.getElementById('healthChecks');
     button.disabled = true;
+    summary.className = 'health-summary';
     summary.textContent = '檢查中…';
     checks.innerHTML = '';
 
