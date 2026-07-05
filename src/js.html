@@ -1,0 +1,120 @@
+<script>
+(function () {
+  const titles = {
+    dashboard: '營運總覽',
+    members: '會員管理',
+    orders: '訂單管理',
+    bookings: '課程預約'
+  };
+
+  document.querySelectorAll('.nav-item').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const view = button.dataset.view;
+      document.querySelectorAll('.nav-item').forEach(function (item) { item.classList.remove('active'); });
+      document.querySelectorAll('.view').forEach(function (item) { item.classList.remove('active-view'); });
+      button.classList.add('active');
+      document.getElementById(view).classList.add('active-view');
+      document.getElementById('pageTitle').textContent = titles[view];
+    });
+  });
+
+  bindForm('memberForm', 'addMember', function (result) {
+    return '會員建立完成：' + result.memberId;
+  });
+
+  bindForm('orderForm', 'createOrder', function (result) {
+    return '訂單建立完成：' + result.orderNumber + '，金額 NTD ' + Number(result.amount).toLocaleString('zh-TW');
+  });
+
+  bindForm('bookingForm', 'createBooking', function (result) {
+    return '預約完成：' + result.bookingId + '，剩餘 ' + result.remainingHours + ' 小時';
+  });
+
+  const bookingForm = document.getElementById('bookingForm');
+  bookingForm.courseDate.addEventListener('change', loadSlots);
+  bookingForm.coachName.addEventListener('change', loadSlots);
+  bookingForm.startTime.addEventListener('change', function () {
+    const option = bookingForm.startTime.selectedOptions[0];
+    document.getElementById('endTime').value = option ? option.dataset.end || '' : '';
+  });
+
+  loadDashboard();
+
+  function bindForm(formId, serverFunction, messageBuilder) {
+    const form = document.getElementById(formId);
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const button = form.querySelector('button[type="submit"]');
+      const data = Object.fromEntries(new FormData(form).entries());
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function (result) {
+          button.disabled = false;
+          showToast(messageBuilder(result), false);
+          form.reset();
+          if (formId === 'bookingForm') resetSlots();
+          loadDashboard();
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          showToast(error && error.message ? error.message : '操作失敗', true);
+        })[serverFunction](data);
+    });
+  }
+
+  function loadSlots() {
+    const date = bookingForm.courseDate.value;
+    const coach = bookingForm.coachName.value;
+    if (!date || !coach) return resetSlots();
+
+    google.script.run
+      .withSuccessHandler(function (slots) {
+        const select = document.getElementById('startTime');
+        select.innerHTML = '<option value="">請選擇時段</option>';
+        slots.forEach(function (slot) {
+          const option = document.createElement('option');
+          option.value = slot.startTime;
+          option.dataset.end = slot.endTime;
+          option.textContent = slot.startTime + '–' + slot.endTime;
+          select.appendChild(option);
+        });
+        document.getElementById('endTime').value = '';
+      })
+      .withFailureHandler(function (error) {
+        showToast(error && error.message ? error.message : '無法讀取可用時段', true);
+      })
+      .listAvailableSlots(coach, date);
+  }
+
+  function resetSlots() {
+    document.getElementById('startTime').innerHTML = '<option value="">請先選擇日期</option>';
+    document.getElementById('endTime').value = '';
+  }
+
+  function loadDashboard() {
+    google.script.run
+      .withSuccessHandler(function (data) {
+        document.getElementById('memberCount').textContent = data.memberCount;
+        document.getElementById('pendingOrders').textContent = data.pendingOrders;
+        document.getElementById('todayBookings').textContent = data.todayBookings;
+        document.getElementById('monthlyRevenue').textContent = 'NTD ' + Number(data.monthlyRevenue).toLocaleString('zh-TW');
+      })
+      .withFailureHandler(function () {
+        ['memberCount','pendingOrders','todayBookings','monthlyRevenue'].forEach(function (id) {
+          document.getElementById(id).textContent = '—';
+        });
+      })
+      .getDashboardSummary();
+  }
+
+  function showToast(message, isError) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.toggle('error', Boolean(isError));
+    toast.classList.add('show');
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(function () { toast.classList.remove('show'); }, 3600);
+  }
+})();
+</script>
