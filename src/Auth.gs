@@ -30,13 +30,23 @@ function isAuthorizedEmail_(email) {
 }
 
 function configureAdminEmails(emails) {
-  const owner = Session.getEffectiveUser().getEmail();
+  const properties = PropertiesService.getScriptProperties();
+  const existing = String(properties.getProperty('ADMIN_EMAILS') || '').trim();
+  const active = currentUserEmail_();
+  const owner = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
   if (!owner) throw new Error('無法辨識 Apps Script 專案擁有者');
+
+  if (existing) {
+    requireAuthorizedUser_();
+  } else if (!active || active !== owner) {
+    throw new Error('首次設定管理員只能由 Apps Script 專案擁有者執行');
+  }
+
   const values = Array.isArray(emails) ? emails : String(emails || '').split(',');
   const normalized = values.map(function(value) {
     return String(value || '').trim().toLowerCase();
   }).filter(Boolean);
-  if (normalized.indexOf(owner.toLowerCase()) < 0) normalized.push(owner.toLowerCase());
-  PropertiesService.getScriptProperties().setProperty('ADMIN_EMAILS', normalized.join(','));
-  return { success: true, admins: normalized };
+  if (normalized.indexOf(owner) < 0) normalized.push(owner);
+  properties.setProperty('ADMIN_EMAILS', normalized.join(','));
+  return { success: true, admins: normalized, updatedBy: active || owner };
 }
