@@ -7,7 +7,8 @@ const CONFIG = Object.freeze({
     BOOKINGS: 'Bookings',
     PRODUCTS: 'Products',
     COACHES: 'Coaches',
-    HOUR_LEDGER: 'Hour_Ledger'
+    HOUR_LEDGER: 'Hour_Ledger',
+    AUDIT_LOG: 'Audit_Log'
   })
 });
 
