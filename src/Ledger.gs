@@ -20,18 +20,30 @@ function changeHours(memberId, delta, type, referenceId, note) {
     if (!Number.isFinite(amount)) throw new Error('時數格式錯誤');
     if (after < 0) throw new Error('剩餘時數不足');
 
+    const now = new Date();
+    const ledgerId = makeId_('LEDGER');
     getSheet_(CONFIG.SHEETS.HOUR_LEDGER).appendRow([
-      new Date(), makeId_('LEDGER'), memberId, type, referenceId,
+      now, ledgerId, memberId, type, referenceId,
       amount, before, after, note || '', operator
     ]);
 
     const sheet = getSheet_(CONFIG.SHEETS.MEMBERS);
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     sheet.getRange(member._row, headers.indexOf('remainingHours') + 1).setValue(after);
-    sheet.getRange(member._row, headers.indexOf('updatedAt') + 1).setValue(new Date());
+    sheet.getRange(member._row, headers.indexOf('updatedAt') + 1).setValue(now);
     if (type === 'ORDER') {
       sheet.getRange(member._row, headers.indexOf('latestTransaction') + 1).setValue(referenceId);
     }
+
+    auditLog_('HOURS_CHANGED', 'MEMBER', memberId, {
+      remainingHours: before
+    }, {
+      remainingHours: after,
+      deltaHours: amount,
+      ledgerId: ledgerId,
+      referenceType: type,
+      referenceId: referenceId
+    }, note || '調整會員時數', operator);
 
     return { success: true, duplicate: false, balanceAfter: after, changedBy: operator };
   } finally {
