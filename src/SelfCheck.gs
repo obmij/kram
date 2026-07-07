@@ -1,4 +1,5 @@
 function runSystemSelfCheck() {
+  requireAuthorizedUser_();
   const checks = [];
   checks.push(checkRequiredSheets_());
   checks.push(checkRequiredHeaders_());
