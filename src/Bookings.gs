@@ -1,11 +1,20 @@
 function createBooking(form) {
   const operator = requireAuthorizedUser_();
   validateRequired_(form, ['memberId', 'coachName', 'courseDate', 'startTime', 'endTime']);
+  return createBookingForMember_(form.memberId, form, operator);
+}
+
+function createBookingForMember_(memberId, form, operator) {
+  validateRequired_(form, ['coachName', 'courseDate', 'startTime', 'endTime']);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    const member = findRecord_(CONFIG.SHEETS.MEMBERS, 'memberId', form.memberId);
+    const member = findRecord_(CONFIG.SHEETS.MEMBERS, 'memberId', memberId);
     if (!member) throw new Error('找不到會員');
+    const coachExists = getPublicCoaches_().some(function(coach) {
+      return String(coach.coachName) === String(form.coachName);
+    });
+    if (!coachExists) throw new Error('找不到這位教練');
 
     const start = bookingDateTime_(form.courseDate, form.startTime);
     const end = bookingDateTime_(form.courseDate, form.endTime);
@@ -19,7 +28,7 @@ function createBooking(form) {
 
     const before = Number(member.remainingHours || 0);
     const after = before - hours;
-    if (after < 0) throw new Error('剩餘時數不足');
+    if (after < 0) throw new Error('你以為上課不用錢嗎？');
 
     const bookingId = 'BOOK-' + formatDate_(new Date(), 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0, 8);
     const now = new Date();
@@ -40,25 +49,30 @@ function createBooking(form) {
       isHoursDeducted: true,
       updatedAt: now,
       completedAt: '',
-      completedBy: ''
+      completedBy: '',
+      cancelledAt: '',
+      cancelledBy: '',
+      cancelReason: ''
     };
-    getSheet_(CONFIG.SHEETS.BOOKINGS).appendRow([
-      booking.createdAt, booking.bookingId, booking.memberId, booking.studentName,
-      booking.coachName, booking.courseDate, booking.startTime, booking.endTime,
-      booking.totalHours, booking.remainingHoursBefore, booking.remainingHoursAfter,
-      booking.bookingStatus, booking.isHoursDeducted, booking.updatedAt,
-      booking.completedAt, booking.completedBy
-    ]);
+    appendRecord_(CONFIG.SHEETS.BOOKINGS, booking);
 
-    getSheet_(CONFIG.SHEETS.HOUR_LEDGER).appendRow([
-      now, ledgerId, member.memberId, 'BOOKING', bookingId,
-      -hours, before, after, '課程預約扣時', operator
-    ]);
+    appendRecord_(CONFIG.SHEETS.HOUR_LEDGER, {
+      createdAt: now,
+      ledgerId: ledgerId,
+      memberId: member.memberId,
+      referenceType: 'BOOKING',
+      referenceId: bookingId,
+      deltaHours: -hours,
+      balanceBefore: before,
+      balanceAfter: after,
+      note: '課程預約扣時',
+      createdBy: operator
+    });
 
-    const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
-    const headers = memberSheet.getRange(1, 1, 1, memberSheet.getLastColumn()).getValues()[0];
-    memberSheet.getRange(member._row, headers.indexOf('remainingHours') + 1).setValue(after);
-    memberSheet.getRange(member._row, headers.indexOf('updatedAt') + 1).setValue(now);
+    updateRecordFields_(CONFIG.SHEETS.MEMBERS, member._row, {
+      remainingHours: after,
+      updatedAt: now
+    });
 
     auditLog_('BOOKING_CREATED', 'BOOKING', bookingId, null, {
       booking: booking,
@@ -89,7 +103,7 @@ function isOperatingSlot_(start, end) {
 }
 
 function listAvailableSlots(coachName, courseDate) {
-  requireAuthorizedUser_();
+  if (!coachName || !courseDate) return [];
   const starts = [8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21];
   return starts.filter(function(hour) {
     const startTime = String(hour).padStart(2, '0') + ':00';
