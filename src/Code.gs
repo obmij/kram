@@ -14,7 +14,16 @@ const CONFIG = Object.freeze({
 });
 
 function doGet(e) {
-  const requestedMode = String(e && e.parameter && e.parameter.mode || '').toLowerCase();
+  const params = e && e.parameter ? e.parameter : {};
+  const asset = String(params.asset || '');
+  const allowedAssets = ['portal-auth-module', 'portal-transaction-module'];
+  if (allowedAssets.indexOf(asset) >= 0) {
+    return ContentService.createTextOutput(
+      HtmlService.createHtmlOutputFromFile(asset).getContent()
+    ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  const requestedMode = String(params.mode || '').toLowerCase();
   const isAdmin = requestedMode === 'admin' && isAuthorizedEmail_(currentUserEmail_());
   const templateName = isAdmin ? 'admin' : 'index';
   const title = isAdmin ? CONFIG.ADMIN_APP_NAME : CONFIG.APP_NAME;
@@ -31,13 +40,8 @@ function include(filename) {
 }
 
 function getSpreadsheet_() {
-  const spreadsheetId = PropertiesService.getScriptProperties()
-    .getProperty('SPREADSHEET_ID');
-
-  if (!spreadsheetId) {
-    throw new Error('尚未設定 Script Property: SPREADSHEET_ID');
-  }
-
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (!spreadsheetId) throw new Error('尚未設定 Script Property: SPREADSHEET_ID');
   return SpreadsheetApp.openById(spreadsheetId);
 }
 
