@@ -1,19 +1,26 @@
 <script>
 (function(){
   const dictionary=window.PMM_I18N;
-  const state={lang:localStorage.getItem('pmm-language')||'zh-Hant',token:localStorage.getItem('pmm-member-token')||'',data:null};
-  const $=s=>document.querySelector(s);
-  const $$=s=>Array.from(document.querySelectorAll(s));
-  window.PMM_PORTAL={state:state,t:t,server:server,render:render,toast:toast,form:formObject,escape:escapeHtml,money:money,message:message,$:$,$$:$$};
+  const portal=window.PMM_PORTAL||{};
+  const state=portal.state||{lang:localStorage.getItem('pmm-language')||'zh-Hant',token:localStorage.getItem('pmm-member-token')||'',data:null};
+  const $=portal.$||function(s){return document.querySelector(s)};
+  const $$=portal.$$||function(s){return Array.from(document.querySelectorAll(s))};
+  Object.assign(portal,{state:state,t:t,server:server,render:render,toast:toast,form:formObject,escape:escapeHtml,money:money,message:message,$:$,$$:$$});
+  window.PMM_PORTAL=portal;
 
   document.addEventListener('DOMContentLoaded',async function(){
-    try{await Promise.all([loadModule('portal-auth-module'),loadModule('portal-transaction-module')])}catch(error){toast(message(error),true)}
+    const missing=[];
+    if(!window.PMM_AUTH)missing.push(loadModule('portal-auth-module'));
+    if(!window.PMM_TRANSACTION)missing.push(loadModule('portal-transaction-module'));
+    if(!window.PMM_ORDER)missing.push(loadModule('portal-order-module'));
+    try{await Promise.all(missing)}catch(error){toast(message(error),true)}
     $('#languageSelect').value=state.lang;
     $('#bookingDate').min=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     $('#languageSelect').addEventListener('change',function(event){state.lang=event.target.value;localStorage.setItem('pmm-language',state.lang);translate();render()});
     translate();
     if(window.PMM_AUTH)window.PMM_AUTH.init();
     if(window.PMM_TRANSACTION)window.PMM_TRANSACTION.init();
+    if(window.PMM_ORDER)window.PMM_ORDER.init();
     try{state.data=await server('getPortalBootstrap',[state.token]);if(state.token&&!state.data.member){state.token='';localStorage.removeItem('pmm-member-token')}render()}catch(error){toast(message(error),true)}
   });
 
@@ -32,21 +39,22 @@
     }).join('');
     $('#coachGrid').innerHTML=state.data.coaches.map(function(coach){
       const bio=state.lang==='en'?coach.bioEn:state.lang==='ja'?coach.bioJa:coach.bioZh;
-      const initials=coach.coachName.split(/\s+/).map(p=>p[0]).join('').slice(0,2).toUpperCase();
+      const initials=coach.coachName.split(/\s+/).map(function(part){return part[0]}).join('').slice(0,2).toUpperCase();
       return '<article class="trainer-card"><div class="trainer-avatar">'+escapeHtml(initials)+'</div><h3>'+escapeHtml(coach.coachName)+'</h3><p class="trainer-title">'+escapeHtml(coach.title)+'</p><p class="trainer-bio">'+escapeHtml(bio)+'</p><div class="trainer-meta"><span>'+escapeHtml(coach.courseName)+'</span><span>'+escapeHtml(coach.specialty)+'</span><span>'+escapeHtml(coach.languages)+'</span></div></article>';
     }).join('');
     const coachValue=$('#bookingCoach').value;
-    $('#bookingCoach').innerHTML=state.data.coaches.map(c=>'<option value="'+escapeHtml(c.coachName)+'">'+escapeHtml(c.coachName)+'｜'+escapeHtml(c.courseName)+'</option>').join('');
+    $('#bookingCoach').innerHTML=state.data.coaches.map(function(coach){return '<option value="'+escapeHtml(coach.coachName)+'">'+escapeHtml(coach.coachName)+'｜'+escapeHtml(coach.courseName)+'</option>'}).join('');
     if(coachValue)$('#bookingCoach').value=coachValue;
     const productValue=$('#productSelect').value;
-    $('#productSelect').innerHTML=state.data.products.map(p=>'<option value="'+escapeHtml(p.productId)+'">'+escapeHtml(p.productName)+'｜'+p.hours+'h｜NTD '+money(p.price)+'</option>').join('');
+    $('#productSelect').innerHTML=state.data.products.map(function(product){return '<option value="'+escapeHtml(product.productId)+'">'+escapeHtml(product.productName)+'｜'+product.hours+'h｜NTD '+money(product.price)+'</option>'}).join('');
     if(productValue)$('#productSelect').value=productValue;
     const paymentValue=$('#paymentSelect').value;
-    $('#paymentSelect').innerHTML=state.data.paymentMethods.map(p=>'<option value="'+escapeHtml(p)+'">'+escapeHtml(p)+'</option>').join('');
+    $('#paymentSelect').innerHTML=state.data.paymentMethods.map(function(method){return '<option value="'+escapeHtml(method)+'">'+escapeHtml(method)+'</option>'}).join('');
     if(paymentValue)$('#paymentSelect').value=paymentValue;
     $('#adminLink').hidden=!state.data.adminAvailable;
     if(window.PMM_AUTH)window.PMM_AUTH.render();
     if(window.PMM_TRANSACTION)window.PMM_TRANSACTION.render();
+    if(window.PMM_ORDER)window.PMM_ORDER.render();
   }
 
   function translate(){document.documentElement.lang=state.lang;$$('[data-i18n]').forEach(function(node){const value=t(node.dataset.i18n);if(value)node.textContent=value})}
@@ -69,6 +77,6 @@
   function money(value){return Number(value||0).toLocaleString(state.lang==='zh-Hant'?'zh-TW':state.lang)}
   function message(error){return error&&error.message?error.message:String(error||'操作失敗')}
   function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
-  function toast(text,isError){const node=$('#toast');node.textContent=text;node.classList.toggle('error',Boolean(isError));node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.classList.remove('show'),4200)}
+  function toast(text,isError){const node=$('#toast');node.textContent=text;node.classList.toggle('error',Boolean(isError));node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(function(){node.classList.remove('show')},4200)}
 })();
 </script>
