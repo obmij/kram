@@ -4,7 +4,8 @@ const SCHEMAS = Object.freeze({
   Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt','completedAt','completedBy'],
   Products: ['productId','productName','hours','price','active'],
   Coaches: ['coachId','coachName','active'],
-  Hour_Ledger: ['createdAt','ledgerId','memberId','referenceType','referenceId','deltaHours','balanceBefore','balanceAfter','note','createdBy']
+  Hour_Ledger: ['createdAt','ledgerId','memberId','referenceType','referenceId','deltaHours','balanceBefore','balanceAfter','note','createdBy'],
+  Audit_Log: ['createdAt','auditId','user','action','entity','entityId','beforeJson','afterJson','remarks']
 });
 
 function setupSystem() {
@@ -19,6 +20,9 @@ function setupSystem() {
   });
   seedProducts_();
   seedCoaches_();
+  auditLog_('SYSTEM_SETUP', 'SYSTEM', CONFIG.APP_NAME, null, {
+    sheets: Object.keys(SCHEMAS)
+  }, '初始化或更新系統資料結構', operator);
   return { success: true, sheets: Object.keys(SCHEMAS), updatedBy: operator };
 }
 
