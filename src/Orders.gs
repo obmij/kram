@@ -10,23 +10,30 @@ function createOrder(data) {
     if (!member) throw new Error('找不到會員');
     const now = new Date();
     const orderNumber = generateOrderNumber_(now);
+    const order = {
+      createdAt: now,
+      orderNumber: orderNumber,
+      memberId: member.memberId,
+      name: member.chineseName || member.englishName,
+      phone: member.phone,
+      billingAddress: data.billingAddress || member.address || '',
+      productId: product.productId,
+      productName: product.productName,
+      purchaseHours: product.hours,
+      amount: product.price,
+      paymentMethod: data.paymentMethod,
+      transactionStatus: 'Pending',
+      isHoursApplied: false,
+      appliedAt: '',
+      updatedAt: now
+    };
     getSheet_(CONFIG.SHEETS.ORDERS).appendRow([
-      now,
-      orderNumber,
-      member.memberId,
-      member.chineseName || member.englishName,
-      member.phone,
-      data.billingAddress || member.address || '',
-      product.productId,
-      product.productName,
-      product.hours,
-      product.price,
-      data.paymentMethod,
-      'Pending',
-      false,
-      '',
-      now
+      order.createdAt, order.orderNumber, order.memberId, order.name, order.phone,
+      order.billingAddress, order.productId, order.productName,
+      order.purchaseHours, order.amount, order.paymentMethod,
+      order.transactionStatus, order.isHoursApplied, order.appliedAt, order.updatedAt
     ]);
+    auditLog_('ORDER_CREATED', 'ORDER', orderNumber, null, order, '建立待付款訂單', operator);
     return { success: true, orderNumber: orderNumber, amount: product.price, createdBy: operator };
   } finally {
     lock.releaseLock();
