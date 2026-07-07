@@ -27,6 +27,28 @@ function findRecord_(sheetName, key, value) {
   }) || null;
 }
 
+function appendRecord_(sheetName, record) {
+  const sheet = getSheet_(sheetName);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  sheet.appendRow(headers.map(function(header) {
+    return Object.prototype.hasOwnProperty.call(record, header) ? record[header] : '';
+  }));
+}
+
+function updateRecordFields_(sheetName, rowNumber, changes) {
+  const sheet = getSheet_(sheetName);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  Object.keys(changes).forEach(function(field) {
+    const column = headers.indexOf(field) + 1;
+    if (column > 0) sheet.getRange(rowNumber, column).setValue(changes[field]);
+  });
+}
+
+function isActive_(value) {
+  if (value === true) return true;
+  return ['true', 'yes', '1', 'active'].indexOf(String(value || '').trim().toLowerCase()) >= 0;
+}
+
 function makeId_(prefix) {
   return prefix + '-' + Utilities.getUuid();
 }
