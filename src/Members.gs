@@ -12,11 +12,28 @@ function addMember(form) {
       return String(item.memberId || '').indexOf(prefix) === 0;
     }).length + 1;
     const memberId = prefix + String(serial).padStart(3, '0');
+    const member = {
+      createdAt: now,
+      memberId: memberId,
+      chineseName: form.chineseName || '',
+      englishName: name,
+      birthday: form.birthday || '',
+      phone: form.phone || '',
+      address: form.address || '',
+      memberLevel: form.memberLevel || 'Gold',
+      latestTransaction: '',
+      completedHours: 0,
+      remainingHours: 0,
+      status: 'Active',
+      updatedAt: now
+    };
     getSheet_(CONFIG.SHEETS.MEMBERS).appendRow([
-      now, memberId, form.chineseName || '', name, form.birthday || '',
-      form.phone || '', form.address || '', form.memberLevel || 'Gold',
-      '', 0, 0, 'Active', now
+      member.createdAt, member.memberId, member.chineseName, member.englishName,
+      member.birthday, member.phone, member.address, member.memberLevel,
+      member.latestTransaction, member.completedHours, member.remainingHours,
+      member.status, member.updatedAt
     ]);
+    auditLog_('MEMBER_CREATED', 'MEMBER', memberId, null, member, '建立會員', operator);
     return { success: true, memberId: memberId, createdBy: operator };
   } finally {
     lock.releaseLock();
