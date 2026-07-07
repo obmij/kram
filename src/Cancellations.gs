@@ -14,6 +14,7 @@ function cancelBooking(bookingId, reason) {
         success: true,
         duplicate: true,
         bookingId: bookingId,
+        returnedHours: Number(booking.totalHours || 0),
         remainingHours: Number(booking.remainingHoursAfter || 0)
       };
     }
@@ -27,6 +28,17 @@ function cancelBooking(bookingId, reason) {
     const hours = Number(booking.totalHours || 0);
     if (!Number.isFinite(hours) || hours <= 0) throw new Error('預約時數資料錯誤');
 
+    const bookingSheet = getSheet_(CONFIG.SHEETS.BOOKINGS);
+    const bookingHeaders = bookingSheet.getRange(1, 1, 1, bookingSheet.getLastColumn()).getValues()[0];
+    requireHeaders_(bookingHeaders, [
+      'bookingStatus', 'remainingHoursAfter', 'updatedAt',
+      'cancelledAt', 'cancelledBy', 'cancelReason'
+    ]);
+
+    const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
+    const memberHeaders = memberSheet.getRange(1, 1, 1, memberSheet.getLastColumn()).getValues()[0];
+    requireHeaders_(memberHeaders, ['remainingHours', 'updatedAt']);
+
     const refundType = 'BOOKING_CANCEL';
     const existingRefund = getRecords_(CONFIG.SHEETS.HOUR_LEDGER).find(function(item) {
       return String(item.referenceType) === refundType &&
@@ -34,8 +46,6 @@ function cancelBooking(bookingId, reason) {
     });
 
     const now = new Date();
-    const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
-    const memberHeaders = memberSheet.getRange(1, 1, 1, memberSheet.getLastColumn()).getValues()[0];
     const balanceBefore = Number(member.remainingHours || 0);
     let balanceAfter;
     let ledgerId;
@@ -63,8 +73,6 @@ function cancelBooking(bookingId, reason) {
     setCellByHeader_(memberSheet, member._row, memberHeaders, 'remainingHours', balanceAfter);
     setCellByHeader_(memberSheet, member._row, memberHeaders, 'updatedAt', now);
 
-    const bookingSheet = getSheet_(CONFIG.SHEETS.BOOKINGS);
-    const bookingHeaders = bookingSheet.getRange(1, 1, 1, bookingSheet.getLastColumn()).getValues()[0];
     setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'bookingStatus', 'Cancelled');
     setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'remainingHoursAfter', balanceAfter);
     setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'updatedAt', now);
@@ -96,5 +104,14 @@ function cancelBooking(bookingId, reason) {
     };
   } finally {
     lock.releaseLock();
+  }
+}
+
+function requireHeaders_(headers, required) {
+  const missing = required.filter(function(header) {
+    return headers.indexOf(header) < 0;
+  });
+  if (missing.length) {
+    throw new Error('缺少資料欄位：' + missing.join(', ') + '，請先執行 setupSystem()');
   }
 }
