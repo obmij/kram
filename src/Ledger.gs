@@ -1,4 +1,5 @@
 function changeHours(memberId, delta, type, referenceId, note) {
+  const operator = requireAuthorizedUser_();
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -21,7 +22,7 @@ function changeHours(memberId, delta, type, referenceId, note) {
 
     getSheet_(CONFIG.SHEETS.HOUR_LEDGER).appendRow([
       new Date(), makeId_('LEDGER'), memberId, type, referenceId,
-      amount, before, after, note || '', 'system'
+      amount, before, after, note || '', operator
     ]);
 
     const sheet = getSheet_(CONFIG.SHEETS.MEMBERS);
@@ -32,7 +33,7 @@ function changeHours(memberId, delta, type, referenceId, note) {
       sheet.getRange(member._row, headers.indexOf('latestTransaction') + 1).setValue(referenceId);
     }
 
-    return { success: true, duplicate: false, balanceAfter: after };
+    return { success: true, duplicate: false, balanceAfter: after, changedBy: operator };
   } finally {
     lock.releaseLock();
   }
