@@ -8,6 +8,7 @@ const SCHEMAS = Object.freeze({
 });
 
 function setupSystem() {
+  const operator = requireAuthorizedUser_();
   const ss = getSpreadsheet_();
   Object.keys(SCHEMAS).forEach(function(name) {
     let sheet = ss.getSheetByName(name);
@@ -18,7 +19,7 @@ function setupSystem() {
   });
   seedProducts_();
   seedCoaches_();
-  return { success: true, sheets: Object.keys(SCHEMAS) };
+  return { success: true, sheets: Object.keys(SCHEMAS), updatedBy: operator };
 }
 
 function ensureHeaders_(sheet, requiredHeaders) {
