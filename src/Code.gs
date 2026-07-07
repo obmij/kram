@@ -16,7 +16,7 @@ const CONFIG = Object.freeze({
 function doGet(e) {
   const params = e && e.parameter ? e.parameter : {};
   const asset = String(params.asset || '');
-  const allowedAssets = ['portal-auth-module', 'portal-transaction-module'];
+  const allowedAssets = ['portal-auth-module', 'portal-transaction-module', 'portal-order-module'];
   if (allowedAssets.indexOf(asset) >= 0) {
     return ContentService.createTextOutput(
       HtmlService.createHtmlOutputFromFile(asset).getContent()
