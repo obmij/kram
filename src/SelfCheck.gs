@@ -6,8 +6,10 @@ function runSystemSelfCheck() {
   checks.push(checkDuplicateMemberIds_());
   checks.push(checkDuplicateOrderNumbers_());
   checks.push(checkDuplicateBookingIds_());
+  checks.push(checkDuplicateAuditIds_());
   checks.push(checkNegativeMemberBalances_());
   checks.push(checkBookingOverlaps_());
+  checks.push(checkAuditCompleteness_());
 
   const failed = checks.filter(function(check) { return !check.passed; });
   return {
@@ -50,6 +52,10 @@ function checkDuplicateBookingIds_() {
   return duplicateCheck_(CONFIG.SHEETS.BOOKINGS, 'bookingId', '預約編號重複');
 }
 
+function checkDuplicateAuditIds_() {
+  return duplicateCheck_(CONFIG.SHEETS.AUDIT_LOG, 'auditId', '稽核編號重複');
+}
+
 function duplicateCheck_(sheetName, key, label) {
   const seen = {};
   const duplicates = [];
@@ -87,6 +93,18 @@ function checkBookingOverlaps_() {
     }
   }
   return result_('教練時段重疊', conflicts.length === 0, conflicts.length ? conflicts.join(', ') : '無');
+}
+
+function checkAuditCompleteness_() {
+  const invalid = getRecords_(CONFIG.SHEETS.AUDIT_LOG).filter(function(record) {
+    return !String(record.auditId || '').trim() ||
+      !String(record.user || '').trim() ||
+      !String(record.action || '').trim() ||
+      !String(record.entity || '').trim();
+  }).map(function(record) {
+    return String(record.auditId || 'row-' + record._row);
+  });
+  return result_('稽核紀錄完整性', invalid.length === 0, invalid.length ? invalid.join(', ') : '完整');
 }
 
 function result_(name, passed, detail) {
