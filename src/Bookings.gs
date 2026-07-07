@@ -1,5 +1,5 @@
 function createBooking(form) {
-  requireAuthorizedUser_();
+  const operator = requireAuthorizedUser_();
   validateRequired_(form, ['memberId', 'coachName', 'courseDate', 'startTime', 'endTime']);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -23,16 +23,36 @@ function createBooking(form) {
 
     const bookingId = 'BOOK-' + formatDate_(new Date(), 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0, 8);
     const now = new Date();
+    const ledgerId = makeId_('LEDGER');
+    const booking = {
+      createdAt: now,
+      bookingId: bookingId,
+      memberId: member.memberId,
+      studentName: member.chineseName || member.englishName,
+      coachName: form.coachName,
+      courseDate: normalizeDate_(form.courseDate),
+      startTime: normalizeTime_(form.startTime),
+      endTime: normalizeTime_(form.endTime),
+      totalHours: hours,
+      remainingHoursBefore: before,
+      remainingHoursAfter: after,
+      bookingStatus: 'Confirmed',
+      isHoursDeducted: true,
+      updatedAt: now,
+      completedAt: '',
+      completedBy: ''
+    };
     getSheet_(CONFIG.SHEETS.BOOKINGS).appendRow([
-      now, bookingId, member.memberId,
-      member.chineseName || member.englishName,
-      form.coachName, normalizeDate_(form.courseDate), normalizeTime_(form.startTime), normalizeTime_(form.endTime),
-      hours, before, after, 'Confirmed', true, now, '', ''
+      booking.createdAt, booking.bookingId, booking.memberId, booking.studentName,
+      booking.coachName, booking.courseDate, booking.startTime, booking.endTime,
+      booking.totalHours, booking.remainingHoursBefore, booking.remainingHoursAfter,
+      booking.bookingStatus, booking.isHoursDeducted, booking.updatedAt,
+      booking.completedAt, booking.completedBy
     ]);
 
     getSheet_(CONFIG.SHEETS.HOUR_LEDGER).appendRow([
-      now, makeId_('LEDGER'), member.memberId, 'BOOKING', bookingId,
-      -hours, before, after, '課程預約扣時', 'system'
+      now, ledgerId, member.memberId, 'BOOKING', bookingId,
+      -hours, before, after, '課程預約扣時', operator
     ]);
 
     const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
@@ -40,7 +60,20 @@ function createBooking(form) {
     memberSheet.getRange(member._row, headers.indexOf('remainingHours') + 1).setValue(after);
     memberSheet.getRange(member._row, headers.indexOf('updatedAt') + 1).setValue(now);
 
-    return { success: true, bookingId: bookingId, totalHours: hours, remainingHours: after };
+    auditLog_('BOOKING_CREATED', 'BOOKING', bookingId, null, {
+      booking: booking,
+      ledgerId: ledgerId,
+      memberBalanceBefore: before,
+      memberBalanceAfter: after
+    }, '建立課程預約並扣除時數', operator);
+
+    return {
+      success: true,
+      bookingId: bookingId,
+      totalHours: hours,
+      remainingHours: after,
+      createdBy: operator
+    };
   } finally {
     lock.releaseLock();
   }
