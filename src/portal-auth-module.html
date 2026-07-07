@@ -1,0 +1,55 @@
+(function(){
+  const P=window.PMM_PORTAL;
+  const S=P.state,$=P.$,$$=P.$$;
+  window.PMM_AUTH={init:init,render:render};
+
+  function init(){
+    $('#accountButton').addEventListener('click',open);
+    $('#heroAuthButton').addEventListener('click',open);
+    $('#closeAccountDialog').addEventListener('click',function(){$('#accountDialog').close()});
+    $$('.auth-tab').forEach(function(button){button.addEventListener('click',function(){show(button.dataset.authView)})});
+    $('#loginForm').addEventListener('submit',login);
+    $('#registerForm').addEventListener('submit',register);
+    $('#logoutButton').addEventListener('click',logout);
+  }
+
+  function render(){
+    const member=S.data.member;
+    $('#accountButton').textContent=member?(member.chineseName||member.englishName||member.memberId):P.t('loginRegister');
+    $('#authTabs').style.display=member?'none':'flex';
+    $$('.auth-view').forEach(function(panel){panel.classList.toggle('active',!member&&panel.dataset.authPanel==='login')});
+    $('#memberPanel').classList.toggle('active',Boolean(member));
+
+    if(!member){
+      $('#bookingMemberStatus').innerHTML='<span class="balance-chip">'+P.escape(P.t('notLoggedIn'))+'</span><strong>—</strong><p>'+P.escape(P.t('loginToContinue'))+'</p><button class="button button-ghost-dark" id="statusLogin" type="button">'+P.escape(P.t('openLogin'))+'</button>';
+      $('#statusLogin').addEventListener('click',open);
+      return;
+    }
+
+    $('#bookingMemberStatus').innerHTML='<span class="balance-chip">'+P.escape(member.memberLevel)+'</span><strong>'+member.remainingHours+' h</strong><p>'+P.escape(P.t('remainingHours'))+'<br>'+P.escape(P.t('memberId'))+'：'+P.escape(member.memberId)+'</p>';
+    const activity=S.data.memberActivity||{orders:[],bookings:[]};
+    const orders=activity.orders.slice(0,4).map(function(item){return '<div class="activity-item"><strong>'+P.escape(item.productName)+'</strong>'+P.escape(item.createdAt)+' · NTD '+P.money(item.amount)+' · '+P.escape(item.transactionStatus)+'</div>'}).join('')||'<p>'+P.escape(P.t('noRecords'))+'</p>';
+    const bookings=activity.bookings.slice(0,4).map(function(item){return '<div class="activity-item"><strong>'+P.escape(item.coachName)+'</strong>'+P.escape(item.courseDate)+' '+P.escape(item.startTime)+'–'+P.escape(item.endTime)+' · '+P.escape(item.bookingStatus)+'</div>'}).join('')||'<p>'+P.escape(P.t('noRecords'))+'</p>';
+    $('#memberPanelContent').innerHTML='<div class="member-panel-head"><div><h2>'+P.escape(member.chineseName||member.englishName)+'</h2><p>'+P.escape(member.memberId)+' · '+P.escape(member.email)+'</p></div><div class="member-balance"><strong>'+member.remainingHours+'</strong><span>'+P.escape(P.t('remainingHours'))+'</span></div></div><div class="activity-columns"><div class="activity-box"><h3>'+P.escape(P.t('orders'))+'</h3>'+orders+'</div><div class="activity-box"><h3>'+P.escape(P.t('bookings'))+'</h3>'+bookings+'</div></div>';
+  }
+
+  function open(){if(S.data&&S.data.member)render();else show('login');$('#accountDialog').showModal()}
+  function show(view){$$('.auth-tab').forEach(function(tab){tab.classList.toggle('active',tab.dataset.authView===view)});$$('.auth-view').forEach(function(panel){panel.classList.toggle('active',panel.dataset.authPanel===view)});$('#memberPanel').classList.remove('active')}
+
+  async function login(event){
+    event.preventDefault();const button=event.currentTarget.querySelector('button[type="submit"]');button.disabled=true;
+    try{const result=await P.server('loginMember',[P.form(event.currentTarget)]);save(result);event.currentTarget.reset();P.render();$('#accountDialog').close()}catch(error){P.toast(P.message(error),true)}finally{button.disabled=false}
+  }
+
+  async function register(event){
+    event.preventDefault();const button=event.currentTarget.querySelector('button[type="submit"]');const data=P.form(event.currentTarget);data.locale=S.lang;button.disabled=true;
+    try{const result=await P.server('registerMember',[data]);save(result);event.currentTarget.reset();P.render();$('#accountDialog').close()}catch(error){P.toast(P.message(error),true)}finally{button.disabled=false}
+  }
+
+  function save(result){S.token=result.token;localStorage.setItem('pmm-member-token',S.token);S.data.member=result.member;S.data.memberActivity=result.memberActivity||{orders:[],bookings:[]}}
+
+  async function logout(){
+    try{await P.server('logoutMember',[S.token])}catch(error){}
+    S.token='';localStorage.removeItem('pmm-member-token');S.data.member=null;S.data.memberActivity=null;P.render();$('#accountDialog').close();P.toast(P.t('logoutSuccess'));
+  }
+})();
