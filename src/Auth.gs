@@ -42,11 +42,24 @@ function configureAdminEmails(emails) {
     throw new Error('首次設定管理員只能由 Apps Script 專案擁有者執行');
   }
 
+  const beforeAdmins = existing.split(',').map(function(value) {
+    return String(value || '').trim().toLowerCase();
+  }).filter(Boolean);
   const values = Array.isArray(emails) ? emails : String(emails || '').split(',');
   const normalized = values.map(function(value) {
     return String(value || '').trim().toLowerCase();
   }).filter(Boolean);
   if (normalized.indexOf(owner) < 0) normalized.push(owner);
   properties.setProperty('ADMIN_EMAILS', normalized.join(','));
-  return { success: true, admins: normalized, updatedBy: active || owner };
+
+  const operator = active || owner;
+  if (properties.getProperty('SPREADSHEET_ID')) {
+    auditLog_('ADMIN_ALLOWLIST_UPDATED', 'SYSTEM', 'ADMIN_EMAILS', {
+      admins: beforeAdmins
+    }, {
+      admins: normalized
+    }, '更新管理員白名單', operator);
+  }
+
+  return { success: true, admins: normalized, updatedBy: operator };
 }
