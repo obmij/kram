@@ -16,7 +16,12 @@ const CONFIG = Object.freeze({
 function doGet(e) {
   const params = e && e.parameter ? e.parameter : {};
   const asset = String(params.asset || '');
-  const allowedAssets = ['portal-auth-module', 'portal-transaction-module', 'portal-order-module'];
+  if (asset === 'portal-order-module') {
+    return ContentService.createTextOutput(
+      'if(window.PMM_ORDER){window.PMM_ORDER.init=function(){};window.PMM_ORDER.render();}'
+    ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  const allowedAssets = ['portal-auth-module', 'portal-transaction-module'];
   if (allowedAssets.indexOf(asset) >= 0) {
     return ContentService.createTextOutput(
       HtmlService.createHtmlOutputFromFile(asset).getContent()
