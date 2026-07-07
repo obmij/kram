@@ -4,20 +4,29 @@
   const state={lang:localStorage.getItem('pmm-language')||'zh-Hant',token:localStorage.getItem('pmm-member-token')||'',data:null};
   const $=s=>document.querySelector(s);
   const $$=s=>Array.from(document.querySelectorAll(s));
-  window.PMM_PORTAL={state:state,t:t,server:server,render:render,toast:toast,form:formObject,escape:escapeHtml,money:money};
+  window.PMM_PORTAL={state:state,t:t,server:server,render:render,toast:toast,form:formObject,escape:escapeHtml,money:money,message:message,$:$,$$:$$};
 
   document.addEventListener('DOMContentLoaded',async function(){
+    try{await Promise.all([loadModule('portal-auth-module'),loadModule('portal-transaction-module')])}catch(error){toast(message(error),true)}
     $('#languageSelect').value=state.lang;
     $('#bookingDate').min=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     $('#languageSelect').addEventListener('change',function(event){state.lang=event.target.value;localStorage.setItem('pmm-language',state.lang);translate();render()});
     translate();
+    if(window.PMM_AUTH)window.PMM_AUTH.init();
+    if(window.PMM_TRANSACTION)window.PMM_TRANSACTION.init();
     try{state.data=await server('getPortalBootstrap',[state.token]);if(state.token&&!state.data.member){state.token='';localStorage.removeItem('pmm-member-token')}render()}catch(error){toast(message(error),true)}
   });
 
+  function loadModule(name){
+    return new Promise(function(resolve,reject){
+      const url=new URL(window.location.href);url.search='';url.searchParams.set('asset',name);
+      const script=document.createElement('script');script.src=url.toString();script.onload=resolve;script.onerror=function(){reject(new Error('Unable to load '+name))};document.head.appendChild(script);
+    });
+  }
+
   function render(){
     if(!state.data)return;
-    const courseGrid=$('#courseGrid');
-    courseGrid.innerHTML=state.data.courses.map(function(course,index){
+    $('#courseGrid').innerHTML=state.data.courses.map(function(course,index){
       const name=state.lang==='en'?course.nameEn:state.lang==='ja'?course.nameJa:course.nameZh;
       return '<article class="course-card"><span class="course-number">0'+(index+1)+'</span><div><h3>'+escapeHtml(name)+'</h3><p>'+escapeHtml(course.languages)+'</p></div></article>';
     }).join('');
@@ -26,18 +35,21 @@
       const initials=coach.coachName.split(/\s+/).map(p=>p[0]).join('').slice(0,2).toUpperCase();
       return '<article class="trainer-card"><div class="trainer-avatar">'+escapeHtml(initials)+'</div><h3>'+escapeHtml(coach.coachName)+'</h3><p class="trainer-title">'+escapeHtml(coach.title)+'</p><p class="trainer-bio">'+escapeHtml(bio)+'</p><div class="trainer-meta"><span>'+escapeHtml(coach.courseName)+'</span><span>'+escapeHtml(coach.specialty)+'</span><span>'+escapeHtml(coach.languages)+'</span></div></article>';
     }).join('');
+    const coachValue=$('#bookingCoach').value;
     $('#bookingCoach').innerHTML=state.data.coaches.map(c=>'<option value="'+escapeHtml(c.coachName)+'">'+escapeHtml(c.coachName)+'｜'+escapeHtml(c.courseName)+'</option>').join('');
+    if(coachValue)$('#bookingCoach').value=coachValue;
+    const productValue=$('#productSelect').value;
     $('#productSelect').innerHTML=state.data.products.map(p=>'<option value="'+escapeHtml(p.productId)+'">'+escapeHtml(p.productName)+'｜'+p.hours+'h｜NTD '+money(p.price)+'</option>').join('');
+    if(productValue)$('#productSelect').value=productValue;
+    const paymentValue=$('#paymentSelect').value;
     $('#paymentSelect').innerHTML=state.data.paymentMethods.map(p=>'<option value="'+escapeHtml(p)+'">'+escapeHtml(p)+'</option>').join('');
+    if(paymentValue)$('#paymentSelect').value=paymentValue;
     $('#adminLink').hidden=!state.data.adminAvailable;
-    if(window.PMM_PORTAL.renderMember)window.PMM_PORTAL.renderMember();
-    if(window.PMM_PORTAL.renderOrder)window.PMM_PORTAL.renderOrder();
+    if(window.PMM_AUTH)window.PMM_AUTH.render();
+    if(window.PMM_TRANSACTION)window.PMM_TRANSACTION.render();
   }
 
-  function translate(){
-    document.documentElement.lang=state.lang;
-    $$('[data-i18n]').forEach(function(node){const value=t(node.dataset.i18n);if(value)node.textContent=value});
-  }
+  function translate(){document.documentElement.lang=state.lang;$$('[data-i18n]').forEach(function(node){const value=t(node.dataset.i18n);if(value)node.textContent=value})}
   function t(key){return(dictionary[state.lang]&&dictionary[state.lang][key])||dictionary['zh-Hant'][key]||key}
   function server(method,args){
     return new Promise(function(resolve,reject){
