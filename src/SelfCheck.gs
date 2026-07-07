@@ -9,6 +9,7 @@ function runSystemSelfCheck() {
   checks.push(checkDuplicateAuditIds_());
   checks.push(checkNegativeMemberBalances_());
   checks.push(checkBookingOverlaps_());
+  checks.push(checkCancelledBookingRefunds_());
   checks.push(checkAuditCompleteness_());
 
   const failed = checks.filter(function(check) { return !check.passed; });
@@ -93,6 +94,36 @@ function checkBookingOverlaps_() {
     }
   }
   return result_('教練時段重疊', conflicts.length === 0, conflicts.length ? conflicts.join(', ') : '無');
+}
+
+function checkCancelledBookingRefunds_() {
+  const bookings = getRecords_(CONFIG.SHEETS.BOOKINGS);
+  const refunds = getRecords_(CONFIG.SHEETS.HOUR_LEDGER).filter(function(item) {
+    return String(item.referenceType) === 'BOOKING_CANCEL';
+  });
+  const problems = [];
+
+  bookings.forEach(function(booking) {
+    const matching = refunds.filter(function(refund) {
+      return String(refund.referenceId) === String(booking.bookingId);
+    });
+    const status = String(booking.bookingStatus || '');
+
+    if (status === 'Cancelled') {
+      if (!booking.cancelledAt || !booking.cancelledBy || !booking.cancelReason) {
+        problems.push(booking.bookingId + ': 取消資料不完整');
+      }
+      if (matching.length !== 1) {
+        problems.push(booking.bookingId + ': 退款 Ledger ' + matching.length + ' 筆');
+      } else if (Number(matching[0].deltaHours || 0) !== Number(booking.totalHours || 0)) {
+        problems.push(booking.bookingId + ': 退款時數不符');
+      }
+    } else if (matching.length) {
+      problems.push(booking.bookingId + ': 非取消狀態卻存在退款 Ledger');
+    }
+  });
+
+  return result_('取消預約退款一致性', problems.length === 0, problems.length ? problems.join(' | ') : '完整');
 }
 
 function checkAuditCompleteness_() {
