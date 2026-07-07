@@ -1,11 +1,16 @@
 (function(){
   const P=window.PMM_PORTAL,S=P.state,$=P.$;
-  window.PMM_TRANSACTION={init:init,render:function(){}};
+  window.PMM_TRANSACTION={init:init,render:function(){if(window.PMM_ORDER)window.PMM_ORDER.render()}};
   function init(){
     $('#bookingCoach').addEventListener('change',loadSlots);
     $('#bookingDate').addEventListener('change',loadSlots);
     $('#bookingTime').addEventListener('change',function(){const option=this.selectedOptions[0];$('#bookingEndTime').value=option?option.dataset.end||'':''});
     $('#bookingForm').addEventListener('submit',submitBooking);
+    loadOrderModule();
+  }
+  function loadOrderModule(){
+    const url=new URL(window.location.href);url.search='';url.searchParams.set('asset','portal-order-module');
+    const script=document.createElement('script');script.src=url.toString();script.onload=function(){if(window.PMM_ORDER){window.PMM_ORDER.init();window.PMM_ORDER.render()}};document.head.appendChild(script);
   }
   async function loadSlots(){
     const coach=$('#bookingCoach').value,date=$('#bookingDate').value;
