@@ -2,10 +2,10 @@
 (function () {
   const rows = document.getElementById('bookingRows');
   const refresh = document.getElementById('refreshBookings');
-  if (rows && refresh) initCompletion_();
+  if (rows && refresh) initBookingActions_();
   initHealth_();
 
-  function initCompletion_() {
+  function initBookingActions_() {
     let rendering = false;
     let scheduled = false;
 
@@ -14,8 +14,13 @@
     });
     refresh.addEventListener('click', scheduleRender_);
     rows.addEventListener('click', function (event) {
-      const button = event.target.closest('[data-complete-booking]');
-      if (button) complete_(button.dataset.completeBooking, button);
+      const completeButton = event.target.closest('[data-complete-booking]');
+      if (completeButton) {
+        complete_(completeButton.dataset.completeBooking, completeButton);
+        return;
+      }
+      const cancelButton = event.target.closest('[data-cancel-booking]');
+      if (cancelButton) cancel_(cancelButton.dataset.cancelBooking, cancelButton);
     });
 
     const observer = new MutationObserver(function () {
@@ -41,9 +46,22 @@
           const html = bookings.map(function (booking) {
             const status = String(booking.bookingStatus || '');
             const statusClass = status.toLowerCase();
-            const action = status === 'Confirmed'
-              ? '<button type="button" class="table-btn" data-complete-booking="' + escape_(booking.bookingId) + '">完成課程</button>'
-              : (booking.completedAt ? escape_(booking.completedAt) : '—');
+            let action = '—';
+
+            if (status === 'Confirmed') {
+              action = '<div class="table-actions">' +
+                '<button type="button" class="table-btn" data-complete-booking="' + escape_(booking.bookingId) + '">完成課程</button>' +
+                '<button type="button" class="table-btn table-btn-danger" data-cancel-booking="' + escape_(booking.bookingId) + '">取消預約</button>' +
+              '</div>';
+            } else if (status === 'Completed') {
+              action = booking.completedAt
+                ? '<span class="action-note">完成：' + escape_(booking.completedAt) + '</span>'
+                : '已完成';
+            } else if (status === 'Cancelled') {
+              const details = [booking.cancelledAt, booking.cancelReason].filter(Boolean).map(escape_).join('｜');
+              action = details ? '<span class="action-note">' + details + '</span>' : '已取消';
+            }
+
             return '<tr>' +
               cell_(booking.courseDate) +
               cell_(booking.startTime + '–' + booking.endTime) +
@@ -72,6 +90,7 @@
         .withSuccessHandler(function (result) {
           window.alert('課程已完成，會員累計已上時數：' + result.completedHours);
           render_();
+          refreshDashboard_();
         })
         .withFailureHandler(function (error) {
           button.disabled = false;
@@ -79,6 +98,46 @@
         })
         .completeBooking(bookingId);
     }
+
+    function cancel_(bookingId, button) {
+      const reason = window.prompt('請輸入取消原因。取消後會立即退回會員時數：', '學員取消');
+      if (reason === null) return;
+      if (!String(reason).trim()) {
+        window.alert('必須填寫取消原因');
+        return;
+      }
+      if (!window.confirm('確定取消預約 ' + bookingId + '？會員時數將立即退回。')) return;
+
+      button.disabled = true;
+      google.script.run
+        .withSuccessHandler(function (result) {
+          window.alert('預約已取消，退回 ' + result.returnedHours + ' 小時；會員剩餘 ' + result.remainingHours + ' 小時。');
+          render_();
+          refreshDashboard_();
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          window.alert(error && error.message ? error.message : '取消預約失敗');
+        })
+        .cancelBooking(bookingId, String(reason).trim());
+    }
+  }
+
+  function refreshDashboard_() {
+    google.script.run
+      .withSuccessHandler(function (data) {
+        const values = {
+          memberCount: data.memberCount,
+          pendingOrders: data.pendingOrders,
+          todayBookings: data.todayBookings,
+          monthlyRevenue: 'NTD ' + Number(data.monthlyRevenue).toLocaleString('zh-TW')
+        };
+        Object.keys(values).forEach(function (id) {
+          const target = document.getElementById(id);
+          if (target) target.textContent = values[id];
+        });
+      })
+      .getDashboardSummary();
   }
 
   function initHealth_() {
