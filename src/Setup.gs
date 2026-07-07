@@ -1,7 +1,7 @@
 const SCHEMAS = Object.freeze({
   CRM_Members: ['createdAt','memberId','chineseName','englishName','birthday','phone','address','memberLevel','latestTransaction','completedHours','remainingHours','status','updatedAt'],
   Orders: ['createdAt','orderNumber','memberId','name','phone','billingAddress','productId','productName','purchaseHours','amount','paymentMethod','transactionStatus','isHoursApplied','appliedAt','updatedAt'],
-  Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt','completedAt','completedBy'],
+  Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt','completedAt','completedBy','cancelledAt','cancelledBy','cancelReason'],
   Products: ['productId','productName','hours','price','active'],
   Coaches: ['coachId','coachName','active'],
   Hour_Ledger: ['createdAt','ledgerId','memberId','referenceType','referenceId','deltaHours','balanceBefore','balanceAfter','note','createdBy'],
