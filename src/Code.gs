@@ -1,5 +1,6 @@
 const CONFIG = Object.freeze({
-  APP_NAME: 'PMM 私人教練管理系統',
+  APP_NAME: 'PMM Private Trainer',
+  ADMIN_APP_NAME: 'PMM 私人教練管理系統',
   TIMEZONE: 'Asia/Taipei',
   SHEETS: Object.freeze({
     MEMBERS: 'CRM_Members',
@@ -12,11 +13,31 @@ const CONFIG = Object.freeze({
   })
 });
 
-function doGet() {
-  return HtmlService.createTemplateFromFile('index')
+function doGet(e) {
+  const params = e && e.parameter ? e.parameter : {};
+  const asset = String(params.asset || '');
+  if (asset === 'portal-order-module') {
+    return ContentService.createTextOutput(
+      'if(window.PMM_ORDER){window.PMM_ORDER.init=function(){};window.PMM_ORDER.render();}'
+    ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  const allowedAssets = ['portal-auth-module', 'portal-transaction-module'];
+  if (allowedAssets.indexOf(asset) >= 0) {
+    return ContentService.createTextOutput(
+      HtmlService.createHtmlOutputFromFile(asset).getContent()
+    ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  const requestedMode = String(params.mode || '').toLowerCase();
+  const isAdmin = requestedMode === 'admin' && isAuthorizedEmail_(currentUserEmail_());
+  const templateName = isAdmin ? 'admin' : 'index';
+  const title = isAdmin ? CONFIG.ADMIN_APP_NAME : CONFIG.APP_NAME;
+
+  return HtmlService.createTemplateFromFile(templateName)
     .evaluate()
-    .setTitle(CONFIG.APP_NAME)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .setTitle(title)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .addMetaTag('theme-color', '#10110f');
 }
 
 function include(filename) {
@@ -24,13 +45,8 @@ function include(filename) {
 }
 
 function getSpreadsheet_() {
-  const spreadsheetId = PropertiesService.getScriptProperties()
-    .getProperty('SPREADSHEET_ID');
-
-  if (!spreadsheetId) {
-    throw new Error('尚未設定 Script Property: SPREADSHEET_ID');
-  }
-
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (!spreadsheetId) throw new Error('尚未設定 Script Property: SPREADSHEET_ID');
   return SpreadsheetApp.openById(spreadsheetId);
 }
 

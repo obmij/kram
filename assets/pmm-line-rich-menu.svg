@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+  <rect width="2500" height="1686" fill="#10110f"/>
+  <circle cx="2170" cy="-80" r="560" fill="#d8ff42" opacity=".14"/>
+  <circle cx="200" cy="1700" r="520" fill="#ff6846" opacity=".14"/>
+  <g font-family="Arial,'Noto Sans TC',sans-serif" fill="#f4f0e7">
+    <text x="96" y="110" font-size="42" font-weight="800" letter-spacing="12">PMM PRIVATE TRAINER / LINE OA</text>
+    <text x="2404" y="110" text-anchor="end" font-size="36" font-weight="800">@PMM</text>
+  </g>
+  <g transform="translate(72 160)" font-family="Arial,'Noto Sans TC',sans-serif" fill="#10110f">
+    <g transform="translate(0 0)"><rect width="770" height="690" rx="44" fill="#f4f0e7"/><text x="52" y="82" font-size="36" font-weight="900">01</text><text x="52" y="590" font-size="82" font-weight="900">課程介紹</text><text x="52" y="642" font-size="28" font-weight="700">COURSES</text></g>
+    <g transform="translate(794 0)"><rect width="770" height="690" rx="44" fill="#d8ff42"/><text x="52" y="82" font-size="36" font-weight="900">02</text><text x="52" y="590" font-size="82" font-weight="900">PT 簡介</text><text x="52" y="642" font-size="28" font-weight="700">PRIVATE TRAINERS</text></g>
+    <g transform="translate(1588 0)"><rect width="770" height="690" rx="44" fill="#ff6846"/><text x="52" y="82" font-size="36" font-weight="900">03</text><text x="52" y="590" font-size="82" font-weight="900">近期活動</text><text x="52" y="642" font-size="28" font-weight="700">CURRENT EVENTS</text></g>
+    <g transform="translate(0 714)"><rect width="770" height="690" rx="44" fill="#ff6846"/><text x="52" y="82" font-size="36" font-weight="900">04</text><text x="52" y="590" font-size="82" font-weight="900">預約課程</text><text x="52" y="642" font-size="28" font-weight="700">BOOK A SESSION</text></g>
+    <g transform="translate(794 714)"><rect width="770" height="690" rx="44" fill="#d8ff42"/><text x="52" y="82" font-size="36" font-weight="900">05</text><text x="52" y="590" font-size="82" font-weight="900">訂購時數</text><text x="52" y="642" font-size="28" font-weight="700">BUY HOURS</text></g>
+    <g transform="translate(1588 714)"><rect width="770" height="690" rx="44" fill="#f4f0e7"/><text x="52" y="82" font-size="36" font-weight="900">06</text><text x="52" y="590" font-size="120" font-weight="900" letter-spacing="-10">PMM</text><text x="52" y="642" font-size="28" font-weight="700">PRIVATE / MOVEMENT / MANAGEMENT</text></g>
+  </g>
+</svg>
