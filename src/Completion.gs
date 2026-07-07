@@ -21,6 +21,8 @@ function completeBooking(bookingId) {
     if (!member) throw new Error('找不到會員');
 
     const now = new Date();
+    const completedBefore = Number(member.completedHours || 0);
+    const completedHours = completedBefore + Number(booking.totalHours || 0);
     const bookingSheet = getSheet_(CONFIG.SHEETS.BOOKINGS);
     const bookingHeaders = bookingSheet.getRange(1, 1, 1, bookingSheet.getLastColumn()).getValues()[0];
     setCellByHeader_(bookingSheet, booking._row, bookingHeaders, 'bookingStatus', 'Completed');
@@ -30,9 +32,20 @@ function completeBooking(bookingId) {
 
     const memberSheet = getSheet_(CONFIG.SHEETS.MEMBERS);
     const memberHeaders = memberSheet.getRange(1, 1, 1, memberSheet.getLastColumn()).getValues()[0];
-    const completedHours = Number(member.completedHours || 0) + Number(booking.totalHours || 0);
     setCellByHeader_(memberSheet, member._row, memberHeaders, 'completedHours', completedHours);
     setCellByHeader_(memberSheet, member._row, memberHeaders, 'updatedAt', now);
+
+    auditLog_('BOOKING_COMPLETED', 'BOOKING', bookingId, {
+      bookingStatus: booking.bookingStatus,
+      completedAt: booking.completedAt || '',
+      completedBy: booking.completedBy || '',
+      memberCompletedHours: completedBefore
+    }, {
+      bookingStatus: 'Completed',
+      completedAt: now,
+      completedBy: operator,
+      memberCompletedHours: completedHours
+    }, '完成課程並增加會員已上時數', operator);
 
     return {
       success: true,
