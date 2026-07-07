@@ -3,90 +3,194 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <?!= include('css'); ?>
+  <meta name="description" content="PMM Private Trainer｜課程、教練、預約與時數訂購">
+  <?!= include('portal-css'); ?>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">PMM</div><div><strong>私人教練管理系統</strong><span>Private Coaching Management</span></div></div>
-      <nav>
-        <button class="nav-item active" data-view="dashboard">總覽</button>
-        <button class="nav-item" data-view="members">會員管理</button>
-        <button class="nav-item" data-view="orders">訂單管理</button>
-        <button class="nav-item" data-view="bookings">課程預約</button>
-      </nav>
-    </aside>
+  <header class="site-header" id="top">
+    <div class="header-line">
+      <div class="header-spacer"></div>
+      <a class="logo" href="#top" aria-label="PMM home">
+        <span class="logo-mark">PMM</span>
+        <span class="logo-sub">PRIVATE TRAINER</span>
+      </a>
+      <div class="header-tools">
+        <label class="language-picker">
+          <span class="sr-only">Language</span>
+          <select id="languageSelect" aria-label="Language">
+            <option value="zh-Hant">正體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+          </select>
+        </label>
+        <button class="account-button" id="accountButton" type="button" data-i18n="loginRegister">登入／註冊</button>
+      </div>
+    </div>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="#courses" data-i18n="navCourses">課程介紹</a>
+      <a href="#trainers" data-i18n="navTrainers">PT 簡介</a>
+      <a href="#events" data-i18n="navEvents">近期活動</a>
+      <a href="#booking" data-i18n="navBooking">預約課程</a>
+      <a href="#hours" data-i18n="navHours">訂購時數</a>
+      <a href="#about" data-i18n="navPmm">PMM</a>
+    </nav>
+  </header>
 
-    <main class="main-content">
-      <header class="topbar"><div><p class="eyebrow">PMM Operations</p><h1 id="pageTitle">營運總覽</h1></div><div class="status-pill">Asia/Taipei</div></header>
-
-      <section id="dashboard" class="view active-view">
-        <div class="metric-grid">
-          <article class="metric-card"><span>會員總數</span><strong id="memberCount">—</strong></article>
-          <article class="metric-card"><span>待付款訂單</span><strong id="pendingOrders">—</strong></article>
-          <article class="metric-card"><span>今日課程</span><strong id="todayBookings">—</strong></article>
-          <article class="metric-card"><span>本月營收</span><strong id="monthlyRevenue">—</strong></article>
+  <main>
+    <section class="hero section-dark">
+      <div class="hero-copy">
+        <p class="kicker">PMM PRIVATE TRAINER</p>
+        <h1 data-i18n="heroTitle">你的訓練。你的時數。你的問題。</h1>
+        <p class="hero-lead" data-i18n="heroLead">從課程介紹、教練選擇到預約與購買時數，全部在同一個會員介面完成。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#booking" data-i18n="bookNow">現在預約</a>
+          <button class="button button-ghost" id="heroAuthButton" type="button" data-i18n="becomeMember">成為會員</button>
         </div>
-        <article class="panel"><div class="panel-head"><div><p class="eyebrow">Workflow</p><h2>核心流程</h2></div></div><div class="flow-grid"><div>建立會員</div><div>建立訂單</div><div>確認付款</div><div>時數加值</div><div>安排課程</div><div>完成課程</div></div></article>
-      </section>
+        <div class="line-badge"><span>LINE OA</span><strong>@PMM</strong></div>
+      </div>
 
-      <section id="members" class="view">
-        <article class="panel form-panel">
-          <div class="panel-head"><div><p class="eyebrow">CRM</p><h2>新增會員</h2></div></div>
-          <form id="memberForm" class="form-grid">
-            <label>中文姓名<input name="chineseName" autocomplete="name"></label>
-            <label>英文姓名<input name="englishName" required autocomplete="name"></label>
-            <label>出生年月日<input name="birthday" type="date"></label>
-            <label>行動電話<input name="phone" required inputmode="tel"></label>
-            <label class="span-2">聯絡地址<input name="address"></label>
-            <label>會員等級<select name="memberLevel"><option>Gold</option><option>Platinum</option><option>Diamond</option></select></label>
-            <div class="form-actions span-2"><button class="primary-btn" type="submit">建立會員</button></div>
-          </form>
-        </article>
-        <article class="panel list-panel">
-          <div class="panel-head stack-mobile"><div><p class="eyebrow">Members</p><h2>會員列表</h2></div><div class="toolbar"><input id="memberSearch" placeholder="搜尋編號、姓名或電話"><button class="secondary-btn" id="memberSearchBtn" type="button">搜尋</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>編號</th><th>姓名</th><th>電話</th><th>等級</th><th>已上</th><th>剩餘</th><th>最近交易</th></tr></thead><tbody id="memberRows"></tbody></table></div>
-        </article>
-      </section>
+      <div class="rich-menu-shell" aria-label="LINE rich menu preview">
+        <div class="rich-menu-heading"><span>LINE OA</span><strong>RICH MENU</strong></div>
+        <div class="rich-menu-grid">
+          <a href="#courses"><span>01</span><strong data-i18n="navCourses">課程介紹</strong></a>
+          <a href="#trainers"><span>02</span><strong data-i18n="navTrainers">PT 簡介</strong></a>
+          <a href="#events"><span>03</span><strong data-i18n="navEvents">近期活動</strong></a>
+          <a href="#booking"><span>04</span><strong data-i18n="navBooking">預約課程</strong></a>
+          <a href="#hours"><span>05</span><strong data-i18n="navHours">訂購時數</strong></a>
+          <a href="#about"><span>06</span><strong>PMM</strong></a>
+        </div>
+      </div>
+    </section>
 
-      <section id="orders" class="view">
-        <article class="panel form-panel">
-          <div class="panel-head"><div><p class="eyebrow">Orders</p><h2>建立訂單</h2></div></div>
-          <form id="orderForm" class="form-grid">
-            <label>會員編號<input name="memberId" required></label>
-            <label>產品<select name="productId"><option value="A">A｜12 小時｜NTD 16,000</option><option value="B">B｜25 小時｜NTD 32,000</option><option value="C">C｜5 小時｜NTD 8,888</option></select></label>
-            <label>付款方式<select name="paymentMethod"><option>Line Pay</option><option>信用卡</option><option>Apple Pay</option><option>Google Pay</option></select></label>
-            <label>帳單地址<input name="billingAddress"></label>
-            <div class="form-actions span-2"><button class="primary-btn" type="submit">建立訂單</button></div>
-          </form>
-        </article>
-        <article class="panel list-panel">
-          <div class="panel-head"><div><p class="eyebrow">Transactions</p><h2>訂單統計</h2></div><select id="orderStatusFilter" class="compact-select"><option value="ALL">全部</option><option value="Pending">Pending</option><option value="Paid">Paid</option></select></div>
-          <div class="table-wrap"><table><thead><tr><th>日期</th><th>訂單號碼</th><th>會員</th><th>產品</th><th>金額</th><th>付款方式</th><th>狀態</th><th>操作</th></tr></thead><tbody id="orderRows"></tbody></table></div>
-        </article>
-      </section>
+    <section class="content-section" id="courses">
+      <div class="section-heading">
+        <p class="kicker">COURSES</p>
+        <h2 data-i18n="coursesTitle">課程介紹</h2>
+        <p data-i18n="coursesLead">想練什麼都可以。練不練得起來是另一回事。</p>
+      </div>
+      <div class="card-grid course-grid" id="courseGrid"></div>
+    </section>
 
-      <section id="bookings" class="view">
-        <article class="panel form-panel">
-          <div class="panel-head"><div><p class="eyebrow">Bookings</p><h2>課程預約</h2></div></div>
-          <form id="bookingForm" class="form-grid">
-            <label>會員編號<input name="memberId" required></label>
-            <label>選擇教練<select name="coachName"><option>Apple</option><option>Berry</option><option>Cindy</option><option>Doofy</option><option>Fancy</option></select></label>
-            <label>課程日期<input name="courseDate" type="date" required></label>
-            <label>開始時間<select name="startTime" id="startTime" required><option value="">請先選擇日期</option></select></label>
-            <label>結束時間<input name="endTime" id="endTime" readonly></label>
-            <div class="form-actions span-2"><button class="primary-btn" type="submit">確認並完成預約</button></div>
-          </form>
-        </article>
-        <article class="panel list-panel">
-          <div class="panel-head"><div><p class="eyebrow">Schedule</p><h2>預約紀錄</h2></div><button class="secondary-btn" id="refreshBookings" type="button">重新整理</button></div>
-          <div class="table-wrap"><table><thead><tr><th>課程日期</th><th>時間</th><th>學員</th><th>會員編號</th><th>教練</th><th>時數</th><th>狀態</th><th>操作</th></tr></thead><tbody id="bookingRows"></tbody></table></div>
-        </article>
-      </section>
-    </main>
-  </div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <?!= include('js'); ?>
-  <?!= include('completion-js'); ?>
+    <section class="content-section section-tint" id="trainers">
+      <div class="section-heading">
+        <p class="kicker">PRIVATE TRAINERS</p>
+        <h2 data-i18n="trainersTitle">PT 簡介</h2>
+        <p data-i18n="trainersLead">每位教練都有專長，也都有自己不願解釋的部分。</p>
+      </div>
+      <div class="trainer-grid" id="coachGrid"></div>
+    </section>
+
+    <section class="content-section event-section" id="events">
+      <div class="event-poster" role="img" aria-label="PMM trial operation promotion">
+        <div class="poster-noise"></div>
+        <p class="poster-label">PMM / SOFT OPENING</p>
+        <h2 data-i18n="trialTitle">PMM 試營運</h2>
+        <div class="poster-price">
+          <span data-i18n="ptHourly">PT 每小時</span>
+          <strong>1000</strong>
+        </div>
+        <div class="poster-deal" data-i18n="trialDeal">買 10 小時只要 12000</div>
+        <p data-i18n="trialFinePrint">算術不是我們的強項，訓練才是。</p>
+        <a class="button button-light" href="#hours" data-i18n="orderHours">訂購時數</a>
+      </div>
+      <div class="event-copy">
+        <p class="kicker">CURRENT EVENT</p>
+        <h2 data-i18n="eventsTitle">近期活動</h2>
+        <p data-i18n="eventsCopy">試營運期間正式推出一個看似優惠、仔細一算又不太確定的方案。</p>
+      </div>
+    </section>
+
+    <section class="content-section transaction-section" id="booking">
+      <div class="section-heading compact">
+        <p class="kicker">BOOKING</p>
+        <h2 data-i18n="bookingTitle">預約課程</h2>
+        <p data-i18n="bookingLead">請先登入或註冊。教練與時段都能選，沒時數就不能選人生。</p>
+      </div>
+      <div class="transaction-layout">
+        <aside class="member-status" id="bookingMemberStatus"></aside>
+        <form class="transaction-form" id="bookingForm">
+          <label><span data-i18n="chooseTrainer">選擇 PT</span><select name="coachName" id="bookingCoach" required></select></label>
+          <label><span data-i18n="courseDate">課程日期</span><input name="courseDate" id="bookingDate" type="date" required></label>
+          <label><span data-i18n="availableTime">可預約時段</span><select name="startTime" id="bookingTime" required><option value="" data-i18n="chooseDateFirst">請先選擇日期</option></select></label>
+          <input name="endTime" id="bookingEndTime" type="hidden">
+          <button class="button button-primary button-wide" type="submit" data-i18n="submitBooking">送出預約</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="content-section transaction-section section-tint" id="hours">
+      <div class="section-heading compact">
+        <p class="kicker">HOURS</p>
+        <h2 data-i18n="hoursTitle">訂購時數</h2>
+        <p data-i18n="hoursLead">支援主流支付。現場繳交現金者，另加 50% 洗錢服務費。</p>
+      </div>
+      <div class="transaction-layout">
+        <aside class="order-summary" id="orderSummary"></aside>
+        <form class="transaction-form" id="orderForm">
+          <label><span data-i18n="choosePackage">選擇方案</span><select name="productId" id="productSelect" required></select></label>
+          <label><span data-i18n="paymentMethod">付款方式</span><select name="paymentMethod" id="paymentSelect" required></select></label>
+          <label><span data-i18n="billingAddress">帳單地址</span><input name="billingAddress" autocomplete="street-address"></label>
+          <p class="cash-warning" id="cashWarning" data-i18n="cashWarning">現場現金：依法加收 50% 洗錢服務費。法是哪一條先不用問。</p>
+          <button class="button button-primary button-wide" type="submit" data-i18n="submitOrder">建立訂單</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="content-section about-section" id="about">
+      <div class="about-mark">PMM</div>
+      <div>
+        <p class="kicker">PRIVATE / MOVEMENT / MANAGEMENT</p>
+        <h2 data-i18n="aboutTitle">PMM 是什麼？</h2>
+        <p data-i18n="aboutCopy">PMM 把私人教練、課程、時數與預約放進同一個系統。你負責出現，我們負責記得你還剩幾小時。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">PMM Private Trainer ©</footer>
+
+  <dialog class="account-dialog" id="accountDialog">
+    <button class="dialog-close" id="closeAccountDialog" type="button" aria-label="Close">×</button>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" type="button" data-auth-view="login" data-i18n="login">登入</button>
+      <button class="auth-tab" type="button" data-auth-view="register" data-i18n="register">註冊</button>
+    </div>
+
+    <section class="auth-view active" data-auth-panel="login">
+      <p class="kicker">MEMBER LOGIN</p>
+      <h2 data-i18n="welcomeBack">歡迎回來</h2>
+      <form id="loginForm" class="dialog-form">
+        <label><span data-i18n="accountIdentifier">會員編號或 Email</span><input name="identifier" autocomplete="username" required></label>
+        <label><span data-i18n="password">密碼</span><input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="button button-primary button-wide" type="submit" data-i18n="login">登入</button>
+      </form>
+    </section>
+
+    <section class="auth-view" data-auth-panel="register">
+      <p class="kicker">NEW MEMBER</p>
+      <h2 data-i18n="createAccount">建立會員帳號</h2>
+      <form id="registerForm" class="dialog-form two-column">
+        <label><span data-i18n="chineseName">中文姓名</span><input name="chineseName" autocomplete="name"></label>
+        <label><span data-i18n="englishName">英文姓名</span><input name="englishName" autocomplete="name" required></label>
+        <label><span data-i18n="birthday">出生年月日</span><input name="birthday" type="date"></label>
+        <label><span data-i18n="phone">行動電話</span><input name="phone" inputmode="tel" autocomplete="tel" required></label>
+        <label class="span-two"><span>Email</span><input name="email" type="email" autocomplete="email" required></label>
+        <label class="span-two"><span data-i18n="password">密碼</span><input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label class="span-two"><span data-i18n="address">聯絡地址</span><input name="address" autocomplete="street-address"></label>
+        <button class="button button-primary button-wide span-two" type="submit" data-i18n="register">註冊</button>
+      </form>
+    </section>
+
+    <section class="member-view" id="memberPanel">
+      <p class="kicker">MEMBER ACCOUNT</p>
+      <div id="memberPanelContent"></div>
+      <div class="member-actions">
+        <a class="button button-ghost-dark" id="adminLink" href="?mode=admin" hidden data-i18n="adminConsole">管理後台</a>
+        <button class="button button-ghost-dark" id="logoutButton" type="button" data-i18n="logout">登出</button>
+      </div>
+    </section>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <?!= include('portal-js'); ?>
 </body>
 </html>
