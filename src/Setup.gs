@@ -1,9 +1,24 @@
 const SCHEMAS = Object.freeze({
-  CRM_Members: ['createdAt','memberId','chineseName','englishName','birthday','phone','address','memberLevel','latestTransaction','completedHours','remainingHours','status','updatedAt'],
-  Orders: ['createdAt','orderNumber','memberId','name','phone','billingAddress','productId','productName','purchaseHours','amount','paymentMethod','transactionStatus','isHoursApplied','appliedAt','updatedAt'],
-  Bookings: ['createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime','endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus','isHoursDeducted','updatedAt','completedAt','completedBy','cancelledAt','cancelledBy','cancelReason'],
-  Products: ['productId','productName','hours','price','active'],
-  Coaches: ['coachId','coachName','active'],
+  CRM_Members: [
+    'createdAt','memberId','chineseName','englishName','birthday','phone','address',
+    'memberLevel','latestTransaction','completedHours','remainingHours','status','updatedAt',
+    'email','passwordSalt','passwordHash','locale','lastLoginAt'
+  ],
+  Orders: [
+    'createdAt','orderNumber','memberId','name','phone','billingAddress','productId',
+    'productName','purchaseHours','amount','paymentMethod','transactionStatus',
+    'isHoursApplied','appliedAt','updatedAt','baseAmount','serviceFee'
+  ],
+  Bookings: [
+    'createdAt','bookingId','memberId','studentName','coachName','courseDate','startTime',
+    'endTime','totalHours','remainingHoursBefore','remainingHoursAfter','bookingStatus',
+    'isHoursDeducted','updatedAt','completedAt','completedBy','cancelledAt','cancelledBy','cancelReason'
+  ],
+  Products: ['productId','productName','hours','price','active','publicDescription','sortOrder'],
+  Coaches: [
+    'coachId','coachName','active','title','courseName','specialty','languages',
+    'bioZh','bioEn','bioJa','imageUrl','sortOrder'
+  ],
   Hour_Ledger: ['createdAt','ledgerId','memberId','referenceType','referenceId','deltaHours','balanceBefore','balanceAfter','note','createdBy'],
   Audit_Log: ['createdAt','auditId','user','action','entity','entityId','beforeJson','afterJson','remarks']
 });
@@ -37,19 +52,53 @@ function ensureHeaders_(sheet, requiredHeaders) {
 }
 
 function seedProducts_() {
-  const sheet = getSheet_(CONFIG.SHEETS.PRODUCTS);
-  if (sheet.getLastRow() > 1) return;
-  sheet.getRange(2, 1, 3, 5).setValues([
-    ['A','私人教練一對一 12 小時',12,16000,true],
-    ['B','私人教練一對一 25 小時',25,32000,true],
-    ['C','私人教練一對一 5 小時',5,8888,true]
-  ]);
+  const seeds = [
+    { productId:'A', productName:'私人教練一對一 12 小時', hours:12, price:16000, active:true, publicDescription:'標準私人教練方案', sortOrder:2 },
+    { productId:'B', productName:'私人教練一對一 25 小時', hours:25, price:32000, active:true, publicDescription:'長期訓練方案', sortOrder:3 },
+    { productId:'C', productName:'私人教練一對一 5 小時', hours:5, price:8888, active:true, publicDescription:'先練五小時看看', sortOrder:4 },
+    { productId:'PROMO10', productName:'PMM 試營運 10 小時', hours:10, price:12000, active:true, publicDescription:'PT 每小時 1000，買 10 小時只要 12000。', sortOrder:1 }
+  ];
+  const existing = getRecords_(CONFIG.SHEETS.PRODUCTS);
+  seeds.forEach(function(seed) {
+    const record = existing.find(function(item) { return String(item.productId) === seed.productId; });
+    if (!record) {
+      appendRecord_(CONFIG.SHEETS.PRODUCTS, seed);
+      return;
+    }
+    const changes = {
+      publicDescription: record.publicDescription || seed.publicDescription,
+      sortOrder: record.sortOrder || seed.sortOrder
+    };
+    if (seed.productId === 'PROMO10') {
+      changes.productName = seed.productName;
+      changes.hours = seed.hours;
+      changes.price = seed.price;
+      changes.active = true;
+    }
+    updateRecordFields_(CONFIG.SHEETS.PRODUCTS, record._row, changes);
+  });
 }
 
 function seedCoaches_() {
-  const sheet = getSheet_(CONFIG.SHEETS.COACHES);
-  if (sheet.getLastRow() > 1) return;
-  const names = ['Apple','Berry','Cindy','Doofy','Fancy'];
-  sheet.getRange(2, 1, names.length, 3)
-    .setValues(names.map(function(name, i) { return ['C' + String(i + 1).padStart(3, '0'), name, true]; }));
+  const profiles = coachProfileDefaults_();
+  const existing = getRecords_(CONFIG.SHEETS.COACHES);
+  Object.keys(profiles).forEach(function(name) {
+    const seed = profiles[name];
+    const record = existing.find(function(item) { return String(item.coachName) === name; });
+    if (!record) {
+      appendRecord_(CONFIG.SHEETS.COACHES, Object.assign({ active:true, imageUrl:'' }, seed));
+      return;
+    }
+    updateRecordFields_(CONFIG.SHEETS.COACHES, record._row, {
+      active: record.active === '' ? true : record.active,
+      title: record.title || seed.title,
+      courseName: record.courseName || seed.courseName,
+      specialty: record.specialty || seed.specialty,
+      languages: record.languages || seed.languages,
+      bioZh: record.bioZh || seed.bioZh,
+      bioEn: record.bioEn || seed.bioEn,
+      bioJa: record.bioJa || seed.bioJa,
+      sortOrder: record.sortOrder || seed.sortOrder
+    });
+  });
 }
