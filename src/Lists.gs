@@ -66,7 +66,11 @@ function listBookings() {
         endTime: displayTime_(booking.endTime),
         totalHours: Number(booking.totalHours || 0),
         bookingStatus: booking.bookingStatus,
-        completedAt: displayDateTime_(booking.completedAt)
+        completedAt: displayDateTime_(booking.completedAt),
+        completedBy: booking.completedBy || '',
+        cancelledAt: displayDateTime_(booking.cancelledAt),
+        cancelledBy: booking.cancelledBy || '',
+        cancelReason: booking.cancelReason || ''
       };
     });
 }
