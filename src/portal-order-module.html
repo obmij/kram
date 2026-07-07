@@ -1,0 +1,30 @@
+(function(){
+  const P=window.PMM_PORTAL,S=P.state,$=P.$;
+  window.PMM_ORDER={init:init,render:render};
+  function init(){
+    $('#productSelect').addEventListener('change',render);
+    $('#paymentSelect').addEventListener('change',render);
+    $('#orderForm').addEventListener('submit',submit);
+  }
+  function render(){
+    if(!S.data||!S.data.products.length)return;
+    const product=S.data.products.find(function(item){return item.productId===$('#productSelect').value})||S.data.products[0];
+    const surcharge=$('#paymentSelect').selectedIndex===S.data.paymentMethods.length-1;
+    const fee=surcharge?Math.round(product.price*.5):0;
+    $('#cashWarning').classList.toggle('show',surcharge);
+    $('#orderSummary').innerHTML='<span class="balance-chip">'+product.hours+' HOURS</span><strong>NTD '+P.money(product.price+fee)+'</strong><p>'+P.escape(product.productName)+'</p><p>'+P.escape(P.t('packagePrice'))+'：NTD '+P.money(product.price)+'<br>'+P.escape(P.t('serviceFee'))+'：NTD '+P.money(fee)+'<br><b>'+P.escape(P.t('total'))+'：NTD '+P.money(product.price+fee)+'</b></p>';
+  }
+  async function submit(event){
+    event.preventDefault();
+    if(!S.data.member){$('#accountButton').click();return}
+    const button=event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled=true;
+    try{
+      const result=await P.server('createMemberOrder',[S.token,P.form(event.currentTarget)]);
+      P.toast(P.t('orderSuccess')+'：'+result.orderNumber+' · NTD '+P.money(result.amount));
+      event.currentTarget.reset();
+      const refreshed=await P.server('refreshMemberPortal',[S.token]);
+      S.data.member=refreshed.member;S.data.memberActivity=refreshed.memberActivity;P.render();
+    }catch(error){P.toast(P.message(error),true)}finally{button.disabled=false}
+  }
+})();
