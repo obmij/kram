@@ -1,0 +1,35 @@
+(function(){
+  const P=window.PMM_PORTAL,S=P.state,$=P.$;
+  window.PMM_TRANSACTION={init:init,render:function(){}};
+  function init(){
+    $('#bookingCoach').addEventListener('change',loadSlots);
+    $('#bookingDate').addEventListener('change',loadSlots);
+    $('#bookingTime').addEventListener('change',function(){const option=this.selectedOptions[0];$('#bookingEndTime').value=option?option.dataset.end||'':''});
+    $('#bookingForm').addEventListener('submit',submitBooking);
+  }
+  async function loadSlots(){
+    const coach=$('#bookingCoach').value,date=$('#bookingDate').value;
+    if(!coach||!date)return resetSlots();
+    $('#bookingTime').innerHTML='<option value="">'+P.escape(P.t('loading'))+'</option>';
+    try{
+      const slots=await P.server('listAvailableSlots',[coach,date]);
+      $('#bookingTime').innerHTML='<option value="">'+P.escape(P.t('chooseTime'))+'</option>'+slots.map(function(slot){return '<option value="'+slot.startTime+'" data-end="'+slot.endTime+'">'+slot.startTime+'–'+slot.endTime+'</option>'}).join('');
+    }catch(error){resetSlots();P.toast(P.message(error),true)}
+  }
+  function resetSlots(){$('#bookingTime').innerHTML='<option value="">'+P.escape(P.t('chooseDateFirst'))+'</option>';$('#bookingEndTime').value=''}
+  async function submitBooking(event){
+    event.preventDefault();
+    if(!S.data.member){$('#accountButton').click();return}
+    const button=event.currentTarget.querySelector('button[type="submit"]');
+    const data=P.form(event.currentTarget);
+    if(!data.endTime){P.toast(P.t('chooseTime'),true);return}
+    button.disabled=true;
+    try{
+      const result=await P.server('createMemberBooking',[S.token,data]);
+      P.toast(P.t('bookingSuccess')+'：'+result.bookingId);
+      event.currentTarget.reset();resetSlots();
+      const refreshed=await P.server('refreshMemberPortal',[S.token]);
+      S.data.member=refreshed.member;S.data.memberActivity=refreshed.memberActivity;P.render();
+    }catch(error){P.toast(P.message(error),true)}finally{button.disabled=false}
+  }
+})();
